@@ -4,10 +4,10 @@
 //! `0-9A-Za-z`, which sort as bytes in digit order. A key never ends in `0`, so two different keys are
 //! two different numbers. There is no fixed length: a key grows only when no shorter one fits.
 //!
-//! Measured (tests/order.rs): 10 000 appends at the end give keys of up to 164 characters (one more
-//! character per 61 appends); 10 000 prepends 330; 10 000 inserts into one ever-shrinking gap, the
-//! worst case that no scheme with immutable keys can beat, about 1 700 (6 bits per character); random
-//! positions stay below 10.
+//! Measured (tests/order.rs): 10 000 appends at the end give keys of up to 165 characters (one more
+//! character per 61 appends); 10 000 prepends 323; 10 000 inserts into one ever-shrinking gap, the
+//! worst case that no scheme with immutable keys can beat, 2 001 (about 5 inserts per character);
+//! random positions stay far below 24.
 
 const DIGITS: &[u8; 62] = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 const TOP: usize = 62;

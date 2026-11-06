@@ -9,10 +9,20 @@ use serde_json::json;
 
 use crate::clock::wins;
 use crate::doc::ElementDoc;
+use crate::model::Kind;
 use crate::unit::Unit;
 
+/// What never changes after `add`: ids, the kind, a stroke's points, an image's IRI, a connector's arrow.
 fn identity(d: &ElementDoc) -> String {
-    json!([d.element.id, d.element.board, d.element.kind]).to_string()
+    let e = &d.element;
+    let fixed = match &e.kind {
+        Kind::Shape { shape } => json!(shape),
+        Kind::Stroke { points } => json!(points),
+        Kind::Image { iri } => json!(iri),
+        Kind::Connector(c) => json!(c.arrow_end),
+        _ => json!(null),
+    };
+    json!([e.id, e.board, e.kind.name(), fixed]).to_string()
 }
 
 /// The merge of `local` and `remote`.

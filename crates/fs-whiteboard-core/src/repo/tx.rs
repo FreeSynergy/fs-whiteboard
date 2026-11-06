@@ -13,6 +13,7 @@ use serde_json::Value;
 use super::handle::WhiteboardRepo;
 use super::history::{Edit, UnitChange};
 use super::state::BoardState;
+use crate::clock::Clock;
 use crate::doc::ElementDoc;
 use crate::error::{Error, Result};
 use crate::model::Element;
@@ -78,17 +79,20 @@ impl Tx {
         if todo.is_empty() {
             return Ok(());
         }
+        let before: Vec<Clock> = todo.iter().map(|(u, _, _)| doc.clock(*u)).collect();
         let clock = doc.set(
             todo.iter().map(|(u, _, v)| (*u, v.clone())).collect(),
             &self.actor,
         )?;
-        for (unit, old, new) in todo {
+        for ((unit, old, new), before) in todo.into_iter().zip(before) {
+            let clock = clock.clone();
             self.changes.push(UnitChange {
                 element: id,
                 unit,
                 old,
                 new,
-                clock: clock.clone(),
+                clock,
+                before,
             });
         }
         if !self.written.contains(&id) {
@@ -108,6 +112,7 @@ impl Tx {
             old: Value::Bool(true),
             new: Value::Bool(false),
             clock,
+            before: Clock::default(),
         });
         self.docs.insert(id, doc);
         self.written.push(id);

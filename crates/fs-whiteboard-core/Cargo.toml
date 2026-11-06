@@ -19,3 +19,4 @@ rstar = "0.14"
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
 proptest = "1"
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }

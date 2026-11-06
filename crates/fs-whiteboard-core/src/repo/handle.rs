@@ -54,6 +54,16 @@ impl WhiteboardRepo {
         self
     }
 
+    /// The same repository acting as another person: shared store and shared board state, but the
+    /// clocks and the log carry `actor`. One editor per person, all on one state.
+    #[must_use]
+    pub fn as_actor(&self, actor: impl Into<String>) -> Self {
+        Self {
+            actor: actor.into(),
+            ..self.clone()
+        }
+    }
+
     pub(super) fn iri(&self, id: ObjectId) -> String {
         crate::doc::iri(&self.instance, id)
     }

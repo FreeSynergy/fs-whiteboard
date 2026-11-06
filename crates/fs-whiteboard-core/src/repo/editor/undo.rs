@@ -48,14 +48,17 @@ impl Editor {
             return Ok(false);
         }
         self.repo.commit(st, tx).await?;
-        let rewritten: Edit = done
-            .into_iter()
-            .map(|c| UnitChange {
-                clock: st.clock(c.element, c.unit),
-                ..c
-            })
-            .collect();
+        let mut rewritten: Edit = Vec::new();
         if let Ok(mut h) = self.history.lock() {
+            for c in done {
+                let new = st.clock(c.element, c.unit);
+                h.rewire(&c, undo, &new);
+                rewritten.push(UnitChange {
+                    clock: new,
+                    before: c.clock.clone(),
+                    ..c
+                });
+            }
             if undo {
                 h.redo.push(rewritten);
             } else {
