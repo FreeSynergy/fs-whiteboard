@@ -4,7 +4,20 @@ This repo holds the **program core**, stage 1 of the design, no GUI and no depen
 
 ## State
 
-Version 0.1.0, being built. The State table is filled in as parts are finished.
+Version 0.1.0. Stage 1 of the design; no capnp server, no GUI.
+
+| Area | State |
+|---|---|
+| Boards, pages, elements with every kind in the contract | done |
+| Merge per property (`merge`, `apply_remote`), type and context guarded | done; nothing calls it yet, as there is no device-to-device sync |
+| Undo per editor | done; capped at 64 MiB |
+| Spatial index, order keys, reading rules | done |
+| Groups, copy, align, lock, reorder | done |
+| Own format, SVG export; PNG and PDF `Unsupported` | done |
+| capnp server, Presence, sharing, libraries, templates, comments | not built |
+| Tests | 104, real stores; XML checked by a real parser |
+
+Checked by an independent reviewer over several rounds before the tag.
 
 ## Decisions (the owner may change them; all provisional)
 
@@ -31,7 +44,7 @@ Pattern Command: each edit is a list of `(element, unit, old value, new value, c
 Pattern Composite. Coordinates are absolute, and a group's `frame` is the union of its members at reading, so a group has no position of its own. `move` on a group moves all members, nested included, each one once even if a member is named too. `delete` marks the group; members are hidden through it, and undo brings them all back. `copy` copies members and points connectors between copied elements at the copies. `group` refuses a locked member; `setParent` and `group` refuse a local cycle.
 
 ### Remote objects
-`apply_remote` reads under the board lock and validates all it receives like a local entry: limits, finite numbers, a valid `order`. It refuses: an envelope id differing from the content id; differing identity (board, kind, stroke points, connector arrow, image); a clock above `u64::MAX / 2`, so the counter cannot run out; a board with no page. Clocks on absent units are dropped when parsing. A deleted board leaves a marker, so a late remote cannot bring it back.
+`apply_remote` reads under the board lock and validates all it receives like a local entry: limits, finite numbers, a valid `order`. It refuses: anything whose existing or incoming object is not this program's by type and context, so another program's data in the store is safe; an envelope id differing from the content id; differing identity (board, kind, stroke points, connector arrow, image); a clock above `u64::MAX / 2`, so the counter cannot run out; a board with no page. Clocks on absent units are dropped when parsing. A deleted board leaves a marker, so a late remote cannot bring it back; a remote marker can only delete a board of this program.
 
 ### One repo per store
 State is cached per repo, and clones and `as_actor` share it. Two repos on one store do **not** see each other's edits and can overwrite them. There is one `WhiteboardRepo` per store; this is stated in the API docs too.
@@ -46,7 +59,7 @@ A locked element is not moved, restyled, reparented or deleted through its group
 Pattern Strategy per media type. Own format `application/vnd.freesynergy.whiteboard+json`, a version field, every element and page, no clocks; import gives new ids, keeps references inside the file, refuses anything over the limits and non-finite numbers, and points to nothing it does not hold. SVG export: own writer, XML-escaped, rotation as `transform`, stroke as a path, images by their file IRI. Other media types answer `Unsupported`.
 
 ### Limits
-A stroke has at most 100 000 points; an import at most 32 MiB; a name or text at most 1 MiB per element; an `order` at most 1 KiB, at every entry. Colours are CSS hex only, and an image IRI must be `https` or `http`; both are checked at every entry, because an SVG viewer would act on them. Results of arithmetic must be finite, so a move past the limit of Float64 is refused rather than stored.
+A stroke has at most 100 000 points; an import at most 32 MiB; a name or text at most 1 MiB per element; an `order` at most 1 KiB, at every entry. Colours are CSS hex only, and an image IRI must be `https` or `http`; both are checked at every entry, because an SVG viewer would act on them. Coordinates and sizes are limited to ±1e15 at every entry, remote and import included, so arithmetic stays finite.
 
 ### Feed
 `subscribe(board)` over the store's change feed, filtered by that board.
