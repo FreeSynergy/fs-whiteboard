@@ -2,7 +2,11 @@
 
 #![allow(dead_code)] // each test file uses a different subset
 
+pub mod sample;
 pub mod xml;
+
+#[allow(unused_imports)]
+pub use sample::{busy, el, exported};
 
 use std::sync::Arc;
 
@@ -138,4 +142,9 @@ impl Pair {
 /// The content of an element as stored, for byte comparison.
 pub async fn raw(store: &Arc<dyn Store>, id: ObjectId) -> String {
     store.get(id).await.unwrap().unwrap().content.to_string()
+}
+
+/// The ids of a page, back to front.
+pub async fn order_of(ed: &dyn BoardEditor, page: ObjectId) -> Vec<ObjectId> {
+    all(ed, page).await.iter().map(|e| e.id).collect()
 }
