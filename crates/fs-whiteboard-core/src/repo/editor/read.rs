@@ -11,8 +11,7 @@ use fs_store::ObjectId;
 use super::handle::Editor;
 use crate::error::{Error, Result};
 use crate::geometry::union_all;
-use crate::model::{Board, Cursor, Element, Kind, Paged, Rect};
-use crate::reading::End;
+use crate::model::{Board, Cursor, Element, Paged, Rect};
 use crate::validate;
 
 fn key(e: &Element) -> (&[u8], ObjectId) {
@@ -54,7 +53,7 @@ impl Editor {
         }
         let view = st.view();
         let mut ids: BTreeSet<ObjectId> = st.index.query(page, area.as_ref()).into_iter().collect();
-        for id in &st.groups {
+        for id in st.groups.iter().chain(&st.connectors) {
             let e = &st.elements[id];
             if e.page == page && area.is_none_or(|a| view.bounds_of(e).intersects(&a)) {
                 ids.insert(*id);
@@ -97,21 +96,13 @@ impl Editor {
             .into_iter()
             .filter(|id| !view.hidden.contains(id))
             .filter_map(|id| st.index.rect_of(id))
+            .chain(
+                st.connectors
+                    .iter()
+                    .filter(|id| !view.hidden.contains(id) && st.elements[id].page == page)
+                    .map(|id| view.bounds_of(&st.elements[id])),
+            )
             .collect();
         Ok(union_all(&rects))
-    }
-
-    pub(super) async fn connector_ends(&self, id: ObjectId) -> Result<(End, End)> {
-        let mut g = self.repo.boards.lock().await;
-        let st = self.repo.state(&mut g, self.board).await?;
-        let view = st.view();
-        match st.elements.get(&id).map(|e| &e.kind) {
-            Some(Kind::Connector(c)) => Ok((
-                view.end(&st.elements, &c.source),
-                view.end(&st.elements, &c.target),
-            )),
-            Some(_) => Err(Error::invalid("not a connector")),
-            None => Err(Error::Foreign(id)),
-        }
     }
 }

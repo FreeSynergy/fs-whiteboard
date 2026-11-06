@@ -25,12 +25,20 @@ pub(super) struct UnitChange {
 
 pub(super) type Edit = Vec<UnitChange>;
 
-const DEPTH: usize = 1000;
+/// Most bytes one editor keeps for undo and redo; the oldest edits go first.
+const CAP_BYTES: usize = 64 * 1024 * 1024;
+
+fn size(edit: &Edit) -> usize {
+    edit.iter()
+        .map(|c| 160 + c.old.to_string().len() + c.new.to_string().len())
+        .sum()
+}
 
 #[derive(Default)]
 pub(super) struct History {
     pub(super) undo: Vec<Edit>,
     pub(super) redo: Vec<Edit>,
+    bytes: usize,
 }
 
 impl History {
@@ -57,10 +65,42 @@ impl History {
         if edit.is_empty() {
             return;
         }
-        self.redo.clear();
+        let dropped: usize = self.redo.drain(..).map(|e| size(&e)).sum();
+        self.bytes = self.bytes.saturating_sub(dropped);
+        self.push_undo(edit);
+    }
+
+    pub(super) fn push_undo(&mut self, edit: Edit) {
+        self.bytes += size(&edit);
         self.undo.push(edit);
-        if self.undo.len() > DEPTH {
-            self.undo.remove(0);
+        self.trim();
+    }
+
+    pub(super) fn push_redo(&mut self, edit: Edit) {
+        self.bytes += size(&edit);
+        self.redo.push(edit);
+        self.trim();
+    }
+
+    pub(super) fn pop(&mut self, undo: bool) -> Option<Edit> {
+        let e = if undo {
+            self.undo.pop()
+        } else {
+            self.redo.pop()
+        }?;
+        self.bytes = self.bytes.saturating_sub(size(&e));
+        Some(e)
+    }
+
+    /// Drops the oldest edits while over the cap (the newest edit always stays).
+    fn trim(&mut self) {
+        while self.bytes > CAP_BYTES && self.undo.len() + self.redo.len() > 1 {
+            let old = if self.undo.is_empty() {
+                self.redo.remove(0)
+            } else {
+                self.undo.remove(0)
+            };
+            self.bytes = self.bytes.saturating_sub(size(&old));
         }
     }
 }

@@ -6,53 +6,9 @@
 use std::fmt::Write;
 
 use super::escape;
+use super::paint::{paint, text_at};
 use crate::format::Scene;
 use crate::model::{Anchor, Connector, Element, Kind, Point, Rect, ShapeKind};
-
-fn colour(c: &str) -> String {
-    if c.is_empty() {
-        "none".into()
-    } else {
-        escape(c)
-    }
-}
-
-fn paint(e: &Element) -> String {
-    let s = &e.style;
-    let dash = if s.dashed {
-        " stroke-dasharray=\"6 4\""
-    } else {
-        ""
-    };
-    format!(
-        "stroke=\"{}\" fill=\"{}\" stroke-width=\"{}\"{dash} opacity=\"{}\"",
-        colour(&s.stroke),
-        colour(&s.fill),
-        s.line_width,
-        s.opacity
-    )
-}
-
-fn text_at(e: &Element, at: Point, text: &str, anchor: &str) -> String {
-    let size = e.style.font_size;
-    let mut spans = String::new();
-    for (i, l) in text.lines().enumerate() {
-        let dy = if i == 0 { 0.0 } else { f64::from(size) * 1.2 };
-        let _ = write!(
-            spans,
-            "<tspan x=\"{}\" dy=\"{dy}\">{}</tspan>",
-            at.x,
-            escape(l)
-        );
-    }
-    format!(
-        "<text x=\"{}\" y=\"{}\" font-family=\"{}\" font-size=\"{size}\" text-anchor=\"{anchor}\" stroke=\"none\" fill=\"{}\">{spans}</text>",
-        at.x,
-        at.y,
-        escape(&e.style.font_family),
-        colour(&e.style.stroke)
-    )
-}
 
 fn rect(f: &Rect, paint: &str) -> String {
     format!(
@@ -100,7 +56,7 @@ fn stroke(e: &Element, points: &[crate::model::StrokePoint], paint: &str) -> Str
         let cmd = if i == 0 { "M" } else { " L" };
         let _ = write!(d, "{cmd}{} {}", f.x + p.x * f.width, f.y + p.y * f.height);
     }
-    format!("<path d=\"{d}\" {paint} fill=\"none\"/>")
+    format!("<path d=\"{d}\" {paint}/>")
 }
 
 fn centre(a: &Anchor, scene: &Scene) -> Point {
@@ -109,8 +65,17 @@ fn centre(a: &Anchor, scene: &Scene) -> Point {
         .map_or(a.point, |e| e.frame.center())
 }
 
+/// Both ends: as resolved at reading (a deleted element's last frame), else from the anchors.
+fn ends(e: &Element, k: &Connector, scene: &Scene) -> (Point, Point) {
+    scene
+        .ends
+        .get(&e.id)
+        .copied()
+        .unwrap_or_else(|| (centre(&k.source, scene), centre(&k.target, scene)))
+}
+
 fn connector(e: &Element, k: &Connector, scene: &Scene, paint: &str) -> String {
-    let (a, b) = (centre(&k.source, scene), centre(&k.target, scene));
+    let (a, b) = ends(e, k, scene);
     let marker = if k.arrow_end {
         " marker-end=\"url(#arrow)\""
     } else {
@@ -132,7 +97,12 @@ fn connector(e: &Element, k: &Connector, scene: &Scene, paint: &str) -> String {
 }
 
 fn body(e: &Element, scene: &Scene) -> String {
-    let (f, paint) = (e.frame, paint(e));
+    let (fill, dashed) = match &e.kind {
+        Kind::Stroke { .. } | Kind::Connector(_) => (Some("none"), false),
+        Kind::Area { .. } => (None, true),
+        _ => (None, false),
+    };
+    let (f, paint) = (e.frame, paint(e, fill, dashed));
     let size = f64::from(e.style.font_size);
     match &e.kind {
         Kind::Shape { shape: s } => shape(*s, &f, &paint),
@@ -157,7 +127,7 @@ fn body(e: &Element, scene: &Scene) -> String {
                 x: f.x,
                 y: f.y - 4.0,
             };
-            rect(&f, &format!("{paint} stroke-dasharray=\"6 4\"")) + &text_at(e, at, text, "start")
+            rect(&f, &paint) + &text_at(e, at, text, "start")
         }
         Kind::Stroke { points } => stroke(e, points, &paint),
         Kind::Connector(k) => connector(e, k, scene, &paint),

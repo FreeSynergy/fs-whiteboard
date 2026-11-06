@@ -7,7 +7,6 @@ use async_trait::async_trait;
 use common::setup;
 use fs_interfaces::Capabilities;
 use fs_store::ObjectId;
-use fs_whiteboard_core::reading::End;
 use fs_whiteboard_core::{
     Board, BoardEditor, Boards, Cursor, Element, Error, Paged, Rect, Result, WhiteboardFeed,
 };
@@ -131,9 +130,6 @@ impl BoardEditor for ReadOnly {
     }
     async fn bounds(&self, _: ObjectId) -> Result<Option<Rect>> {
         Ok(None)
-    }
-    async fn connector_ends(&self, _: ObjectId) -> Result<(End, End)> {
-        Err(Error::invalid("empty"))
     }
 }
 

@@ -62,6 +62,9 @@ impl Editor {
                 return Err(Error::Foreign(id));
             }
         }
+        if before == Some(page) {
+            return Ok(st.board(&self.repo.iri(self.board)));
+        }
         let others: Vec<Page> = effective_pages(&st.pages())
             .into_iter()
             .filter(|p| p.id != page)
@@ -70,9 +73,23 @@ impl Editor {
             .and_then(|b| others.iter().position(|p| p.id == b))
             .unwrap_or(others.len());
         let lo = pos.checked_sub(1).map(|i| others[i].order.clone());
-        let key = order::between(lo.as_deref(), others.get(pos).map(|p| p.order.as_str()));
+        let hi = others.get(pos).map(|p| p.order.clone());
         let mut doc = st.doc.clone();
-        doc.edit_page(page, "order", &self.repo.actor, |p| p.order = key);
+        if lo.is_some() && lo >= hi && hi.is_some() {
+            // equal keys cannot be split: the page goes after both, and the one it goes before follows
+            let upper = others[pos..]
+                .iter()
+                .find(|p| Some(&p.order) > hi.as_ref())
+                .map(|p| p.order.clone());
+            let key = order::between(hi.as_deref(), upper.as_deref());
+            let after = order::between(Some(&key), upper.as_deref());
+            let anchor = others[pos].id;
+            doc.edit_page(page, "order", &self.repo.actor, |p| p.order = key);
+            doc.edit_page(anchor, "order", &self.repo.actor, |p| p.order = after);
+        } else {
+            let key = order::between(lo.as_deref(), hi.as_deref());
+            doc.edit_page(page, "order", &self.repo.actor, |p| p.order = key);
+        }
         self.repo.save_board(self.board, &doc).await?;
         st.set_doc(doc);
         Ok(st.board(&self.repo.iri(self.board)))

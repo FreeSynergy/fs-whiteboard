@@ -26,6 +26,7 @@ pub(super) struct BoardState {
     pub(super) elements: BTreeMap<ObjectId, Element>,
     pub(super) clocks: BTreeMap<ObjectId, Clocks>,
     pub(super) groups: BTreeSet<ObjectId>,
+    pub(super) connectors: BTreeSet<ObjectId>,
     pub(super) index: SpatialIndex,
     view: Option<Arc<View>>,
 }
@@ -38,6 +39,7 @@ impl BoardState {
             elements: BTreeMap::new(),
             clocks: BTreeMap::new(),
             groups: BTreeSet::new(),
+            connectors: BTreeSet::new(),
             index: SpatialIndex::new(),
             view: None,
         }
@@ -48,6 +50,8 @@ impl BoardState {
         let e = d.element;
         if matches!(e.kind, Kind::Group) {
             self.groups.insert(e.id);
+        } else if matches!(e.kind, Kind::Connector(_)) {
+            self.connectors.insert(e.id);
         } else {
             self.index.upsert(e.id, e.page, bounds(&e.frame, e.angle));
         }

@@ -43,7 +43,10 @@ impl Boards for WhiteboardRepo {
         let mut items = Vec::new();
         let mut guard = self.boards.lock().await;
         for id in ids {
-            items.push(self.state(&mut guard, id).await?.board(&self.iri(id)));
+            match self.state(&mut guard, id).await {
+                Ok(st) => items.push(st.board(&self.iri(id))),
+                Err(e) => self.report(id, &e.to_string()),
+            }
         }
         Ok(Paged { items, next })
     }
@@ -89,6 +92,7 @@ impl Boards for WhiteboardRepo {
             self.store.delete(o.envelope.id, &self.actor).await?;
         }
         self.store.delete(id, &self.actor).await?;
+        self.mark_deleted(id).await?;
         guard.remove(&id);
         Ok(())
     }
@@ -112,6 +116,7 @@ fn non_blank(name: &str) -> Result<&str> {
     if name.trim().is_empty() {
         return Err(Error::invalid("a board needs a name"));
     }
+    crate::validate::text(name)?;
     Ok(name)
 }
 

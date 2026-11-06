@@ -9,7 +9,6 @@ use fs_store::{Blob, ObjectId};
 use super::handle::Editor;
 use crate::error::Result;
 use crate::model::{Align, Board, ConnectorEnd, Cursor, Element, Paged, Point, Rect, StyleField};
-use crate::reading::End;
 use crate::traits::BoardEditor;
 
 #[async_trait]
@@ -30,9 +29,6 @@ impl BoardEditor for Editor {
     }
     async fn bounds(&self, page: ObjectId) -> Result<Option<Rect>> {
         Editor::bounds(self, page).await
-    }
-    async fn connector_ends(&self, id: ObjectId) -> Result<(End, End)> {
-        Editor::connector_ends(self, id).await
     }
     async fn add_page(&self, name: &str) -> Result<(Board, ObjectId)> {
         Editor::add_page(self, name).await

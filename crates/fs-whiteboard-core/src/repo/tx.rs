@@ -18,6 +18,7 @@ use crate::doc::ElementDoc;
 use crate::error::{Error, Result};
 use crate::model::Element;
 use crate::unit::Unit;
+use crate::validate;
 
 pub(super) struct Tx {
     actor: String,
@@ -95,6 +96,8 @@ impl Tx {
                 before,
             });
         }
+        // results of arithmetic must stay finite and within the limits: refuse, never store
+        validate::element(&doc.element)?;
         if !self.written.contains(&id) {
             self.written.push(id);
         }
@@ -102,7 +105,8 @@ impl Tx {
     }
 
     /// A new element: it exists from the first clock on; undo of the add deletes it.
-    pub(super) fn create(&mut self, element: Element) {
+    pub(super) fn create(&mut self, element: Element) -> Result<()> {
+        validate::element(&element)?;
         let id = element.id;
         let doc = ElementDoc::fresh(element, &self.actor);
         let clock = doc.clock(Unit::Deleted);
@@ -116,6 +120,7 @@ impl Tx {
         });
         self.docs.insert(id, doc);
         self.written.push(id);
+        Ok(())
     }
 }
 

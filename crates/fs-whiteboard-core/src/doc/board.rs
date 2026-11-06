@@ -37,6 +37,20 @@ impl BoardDoc {
         doc
     }
 
+    /// Drops clocks of units that do not exist, so a stray clock cannot break a merge.
+    pub fn sanitize(&mut self) {
+        let pages = &self.pages;
+        self.clocks.retain(|k, _| {
+            k == "name"
+                || k.split_once('/').is_some_and(|(id, part)| {
+                    matches!(part, "name" | "order" | "deleted")
+                        && id
+                            .parse::<ObjectId>()
+                            .is_ok_and(|id| pages.contains_key(&id))
+                })
+        });
+    }
+
     /// The highest counter seen on this object.
     pub fn highest(&self) -> u64 {
         self.clocks.values().map(Clock::counter).max().unwrap_or(0)

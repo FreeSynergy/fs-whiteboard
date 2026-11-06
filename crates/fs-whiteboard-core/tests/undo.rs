@@ -10,7 +10,7 @@ async fn fill(ed: &dyn BoardEditor, id: fs_store::ObjectId) -> String {
 }
 
 fn red() -> [StyleField; 1] {
-    [StyleField::Fill("red".into())]
+    [StyleField::Fill("#ff0000".into())]
 }
 
 #[tokio::test]
@@ -20,22 +20,22 @@ async fn another_persons_colour_stays_when_i_undo() {
     let (alice, bob) = (f.editor_of("alice").await, f.editor_of("bob").await);
     alice.set_style(&[id], &red()).await.unwrap();
     alice
-        .set_style(&[id], &[StyleField::Fill("blue".into())])
+        .set_style(&[id], &[StyleField::Fill("#0000ff".into())])
         .await
         .unwrap();
-    bob.set_style(&[id], &[StyleField::Fill("green".into())])
+    bob.set_style(&[id], &[StyleField::Fill("#00ff00".into())])
         .await
         .unwrap();
     assert!(
         !alice.undo().await.unwrap(),
         "nothing was left to do: the colour is Bob's now"
     );
-    assert_eq!(fill(&*alice, id).await, "green");
+    assert_eq!(fill(&*alice, id).await, "#00ff00");
     assert!(
         !alice.undo().await.unwrap(),
         "the older edit of that colour is overtaken too"
     );
-    assert_eq!(fill(&*alice, id).await, "green");
+    assert_eq!(fill(&*alice, id).await, "#00ff00");
     assert!(
         !alice.undo().await.unwrap(),
         "and then the history is empty"
@@ -47,18 +47,18 @@ async fn without_interference_undo_and_redo_walk_back_and_forth() {
     let f = fixture().await;
     let id = f.rect(0.0, 0.0).await;
     f.ed.set_style(&[id], &red()).await.unwrap();
-    f.ed.set_style(&[id], &[StyleField::Fill("blue".into())])
+    f.ed.set_style(&[id], &[StyleField::Fill("#0000ff".into())])
         .await
         .unwrap();
     assert!(f.ed.undo().await.unwrap());
-    assert_eq!(fill(&*f.ed, id).await, "red");
+    assert_eq!(fill(&*f.ed, id).await, "#ff0000");
     assert!(f.ed.undo().await.unwrap());
     assert_eq!(fill(&*f.ed, id).await, "");
     assert!(f.ed.redo().await.unwrap() && f.ed.redo().await.unwrap());
-    assert_eq!(fill(&*f.ed, id).await, "blue");
+    assert_eq!(fill(&*f.ed, id).await, "#0000ff");
     assert!(!f.ed.redo().await.unwrap());
     f.ed.undo().await.unwrap();
-    f.ed.set_style(&[id], &[StyleField::Fill("new".into())])
+    f.ed.set_style(&[id], &[StyleField::Fill("#123456".into())])
         .await
         .unwrap();
     assert!(!f.ed.redo().await.unwrap(), "a new edit ends the redo");
@@ -73,7 +73,7 @@ async fn my_undo_takes_back_only_what_is_still_mine() {
     bob.set_style(&[id], &red()).await.unwrap();
     assert!(alice.undo().await.unwrap());
     assert_eq!(frame_of(&*alice, id).await.x, 0.0, "the move is gone");
-    assert_eq!(fill(&*alice, id).await, "red", "the colour stays");
+    assert_eq!(fill(&*alice, id).await, "#ff0000", "the colour stays");
 }
 
 #[tokio::test]

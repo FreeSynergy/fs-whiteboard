@@ -106,7 +106,7 @@ async fn a_locked_element_refuses_every_edit_but_unlocking() {
     locked(f.ed.set_frame(id, Rect::new(0.0, 0.0, 1.0, 1.0)).await);
     locked(f.ed.rotate(id, 1.0).await);
     locked(
-        f.ed.set_style(&[id], &[StyleField::Fill("red".into())])
+        f.ed.set_style(&[id], &[StyleField::Fill("#ff0000".into())])
             .await,
     );
     locked(f.ed.set_text(id, "x").await);

@@ -22,3 +22,13 @@ pub enum End {
         deleted: bool,
     },
 }
+
+impl End {
+    /// Where the end is drawn: the free point, or the middle of the frame (the last one if deleted).
+    pub fn point(&self) -> Point {
+        match self {
+            End::Free(p) => *p,
+            End::Attached { frame, .. } => frame.center(),
+        }
+    }
+}

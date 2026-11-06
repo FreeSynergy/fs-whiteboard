@@ -25,11 +25,16 @@ pub struct WhiteboardRepo {
     pub(super) instance: String,
     pub(super) page_size: usize,
     pub(super) boards: Arc<Mutex<Boards>>,
+    pub(super) problems: Arc<std::sync::Mutex<Vec<(ObjectId, String)>>>,
 }
 
 impl WhiteboardRepo {
     /// Whiteboards over a whole [`Store`]. `actor` is the IRI of the acting person / program: it
     /// goes into the log and into the clocks of every change.
+    ///
+    /// Use **one** repository per store. State is cached per repository (clones and
+    /// [`as_actor`](Self::as_actor) share it); a second repository on the same store does not see
+    /// this one's edits and can overwrite them.
     pub fn new(store: Arc<dyn Store>, actor: impl Into<String>) -> Self {
         Self {
             store,
@@ -37,6 +42,7 @@ impl WhiteboardRepo {
             instance: "local.invalid".into(),
             page_size: 100,
             boards: Arc::new(Mutex::new(HashMap::new())),
+            problems: Arc::new(std::sync::Mutex::new(Vec::new())),
         }
     }
 

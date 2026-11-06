@@ -45,7 +45,7 @@ fn run(n: usize, mut pick: impl FnMut(&[String]) -> (Option<usize>, Option<usize
 
 #[test]
 fn ten_thousand_inserts_at_one_place() {
-    // Longest key measured: appends 165, prepends 323, always into the same shrinking gap 2001
+    // Longest key measured: appends 4, prepends 323, always into the same shrinking gap 2001
     // (5 inserts a character, 6 bits each at best, which no scheme with keys that never change beats).
     let end = run(10_000, |k| (k.len().checked_sub(1), None));
     let front = run(10_000, |k| (None, (!k.is_empty()).then_some(0)));
@@ -57,7 +57,7 @@ fn ten_thousand_inserts_at_one_place() {
         }
     });
     eprintln!("longest key: append {end}, prepend {front}, nested {nested_after}");
-    assert!(end <= 200 && nested_after <= 2100);
+    assert!(end <= 4 && nested_after <= 2100);
 }
 
 proptest! {

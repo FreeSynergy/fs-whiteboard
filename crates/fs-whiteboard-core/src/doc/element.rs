@@ -35,6 +35,12 @@ impl ElementDoc {
         Self { element, clocks }
     }
 
+    /// Drops clocks of units this kind does not have, so a stray clock cannot break a merge.
+    pub fn sanitize(&mut self) {
+        let kind = &self.element.kind;
+        self.clocks.retain(|u, _| u.applies_to(kind));
+    }
+
     /// The clock of a unit; `(0, "")` if it was never written.
     pub fn clock(&self, unit: Unit) -> Clock {
         self.clocks.get(&unit).cloned().unwrap_or_default()

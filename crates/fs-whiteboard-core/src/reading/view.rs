@@ -12,7 +12,7 @@ use super::connector::End;
 use super::pages::effective_pages;
 use super::parents::{depths, effective_parents};
 use crate::geometry::bounds;
-use crate::model::{Anchor, Element, Kind, Page, Rect};
+use crate::model::{Anchor, Element, Kind, Page, Point, Rect};
 
 /// The derived data of one board.
 #[derive(Clone, Debug, Default)]
@@ -25,6 +25,8 @@ pub struct View {
     pub group_frames: BTreeMap<ObjectId, Rect>,
     /// Pages that count as present.
     pub live_pages: BTreeSet<ObjectId>,
+    /// Where the two ends of each connector are.
+    pub connector_ends: BTreeMap<ObjectId, (Point, Point)>,
 }
 
 impl View {
@@ -48,12 +50,30 @@ impl View {
             }
         }
         let group_frames = group_frames(elements, &parents, &order);
-        View {
+        // a group without a live member has no frame, and is not shown
+        hidden.extend(
+            elements
+                .values()
+                .filter(|e| matches!(e.kind, Kind::Group) && !group_frames.contains_key(&e.id))
+                .map(|e| e.id),
+        );
+        let mut view = View {
             parents,
             hidden,
             group_frames,
             live_pages,
+            connector_ends: BTreeMap::new(),
+        };
+        for e in elements.values() {
+            if let Kind::Connector(c) = &e.kind {
+                let ends = (
+                    view.end(elements, &c.source).point(),
+                    view.end(elements, &c.target).point(),
+                );
+                view.connector_ends.insert(e.id, ends);
+            }
         }
+        view
     }
 
     /// The element as the reader sees it: a group has the union of its members as frame.
@@ -61,14 +81,22 @@ impl View {
         let mut e = e.clone();
         if let Some(f) = self.group_frames.get(&e.id) {
             e.frame = *f;
+        } else if let Some((a, b)) = self.connector_ends.get(&e.id) {
+            e.frame = Rect::new(
+                a.x.min(b.x),
+                a.y.min(b.y),
+                (a.x - b.x).abs(),
+                (a.y - b.y).abs(),
+            );
+            e.angle = 0.0;
         }
         e
     }
 
     /// Bounds after rotation, as the index and `bounds` use them.
     pub fn bounds_of(&self, e: &Element) -> Rect {
-        let f = self.group_frames.get(&e.id).unwrap_or(&e.frame);
-        bounds(f, e.angle)
+        let shown = self.shown(e);
+        bounds(&shown.frame, shown.angle)
     }
 
     /// Where one end of a connector is: at its element's frame (the last one, if the element is

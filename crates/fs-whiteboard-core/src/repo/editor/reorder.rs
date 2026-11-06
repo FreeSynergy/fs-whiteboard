@@ -14,6 +14,7 @@ use crate::model::Element;
 use crate::order;
 use crate::repo::tx::Tx;
 use crate::unit::Unit;
+use crate::validate;
 
 fn sorted(mut v: Vec<&Element>) -> Vec<&Element> {
     v.sort_by(|a, b| (a.order.as_bytes(), a.id).cmp(&(b.order.as_bytes(), b.id)));
@@ -36,9 +37,7 @@ impl Editor {
         };
         let anchor = match before {
             Some(b) if ids.contains(&b) => return Err(Error::invalid("cannot go behind itself")),
-            Some(b) => Some(tx.editable(st, b)?.page)
-                .filter(|p| *p == page)
-                .map(|_| b),
+            Some(b) => Some(tx.el(st, b)?.page).filter(|p| *p == page).map(|_| b),
             None => None,
         };
         if (before.is_some() && anchor.is_none()) || pages.iter().any(|p| *p != page) {
@@ -71,6 +70,16 @@ impl Editor {
         } else {
             let keys = order::spread(lo.as_deref(), hi.as_deref(), n);
             changes.extend(moved.iter().map(|e| e.id).zip(keys));
+        }
+        for (id, key) in &changes {
+            if key.len() > validate::MAX_ORDER_BYTES {
+                return Err(Error::TooLarge(
+                    "the order keys of this place are used up; move the elements elsewhere".into(),
+                ));
+            }
+            if Some(*id) == anchor {
+                tx.editable(st, *id)?; // only an anchor whose key has to change counts as edited
+            }
         }
         for (id, key) in changes {
             tx.set(st, id, vec![(Unit::Order, to_value(key)?)])?;

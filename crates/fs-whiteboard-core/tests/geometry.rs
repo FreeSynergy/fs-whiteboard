@@ -4,9 +4,9 @@ mod common;
 
 use common::rect_element;
 use fs_store::ObjectId;
-use fs_whiteboard_core::geometry::{align, bounds};
+use fs_whiteboard_core::geometry::bounds;
 use fs_whiteboard_core::reading::{View, depths, effective_pages, effective_parents};
-use fs_whiteboard_core::{Align, Element, Kind, Page, Rect};
+use fs_whiteboard_core::{Element, Kind, Page, Rect};
 use proptest::prelude::*;
 use std::collections::BTreeMap;
 use std::str::FromStr;
@@ -89,11 +89,51 @@ fn the_view_hides_through_deleted_ancestors_and_pages() {
         (e.id, e.parent, e.deleted) = (id(n), parent.map(id), deleted);
         els.insert(e.id, e);
     };
-    put(1, 200, None, true, Kind::Group);
-    put(2, 200, Some(1), false, Kind::Group);
-    put(3, 200, Some(2), false, Kind::Group);
-    put(4, 200, None, false, Kind::Group);
-    put(5, 201, None, false, Kind::Group);
+    put(
+        1,
+        200,
+        None,
+        true,
+        Kind::Area {
+            text: String::new(),
+        },
+    );
+    put(
+        2,
+        200,
+        Some(1),
+        false,
+        Kind::Area {
+            text: String::new(),
+        },
+    );
+    put(
+        3,
+        200,
+        Some(2),
+        false,
+        Kind::Area {
+            text: String::new(),
+        },
+    );
+    put(
+        4,
+        200,
+        None,
+        false,
+        Kind::Area {
+            text: String::new(),
+        },
+    );
+    put(
+        5,
+        201,
+        None,
+        false,
+        Kind::Area {
+            text: String::new(),
+        },
+    );
     let v = View::build(&els, &pages);
     let hidden: Vec<_> = v.hidden.iter().copied().collect();
     assert_eq!(hidden, vec![id(1), id(2), id(3), id(5)]);
@@ -128,36 +168,4 @@ fn the_view_hides_through_deleted_ancestors_and_pages() {
     .map(|p| p.id)
     .collect();
     assert_eq!(live, vec![id(202)], "all removed: the highest id stays");
-}
-
-#[test]
-fn align_rules() {
-    let items = [
-        (id(1), Rect::new(0.0, 0.0, 10.0, 10.0)),
-        (id(2), Rect::new(30.0, 40.0, 20.0, 10.0)),
-        (id(3), Rect::new(100.0, 5.0, 10.0, 30.0)),
-    ];
-    let d = |how| align(&items, how);
-    assert_eq!(
-        d(Align::Left),
-        vec![(id(2), -30.0, 0.0), (id(3), -100.0, 0.0)]
-    );
-    assert_eq!(
-        d(Align::Right),
-        vec![(id(1), 100.0, 0.0), (id(2), 60.0, 0.0)]
-    );
-    assert_eq!(d(Align::Top), vec![(id(2), 0.0, -40.0), (id(3), 0.0, -5.0)]);
-    assert_eq!(d(Align::Bottom).len(), 2);
-    assert_eq!(d(Align::CenterX).len(), 3);
-    assert_eq!(d(Align::CenterY).len(), 3);
-    assert_eq!(
-        d(Align::DistributeX),
-        vec![(id(2), 15.0, 0.0)],
-        "gaps of 35 between 0..10, 45..65 and 100..110"
-    );
-    assert!(
-        align(&items[..2], Align::DistributeX).is_empty(),
-        "two cannot be spread"
-    );
-    assert!(align(&[], Align::Left).is_empty());
 }

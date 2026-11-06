@@ -18,6 +18,9 @@ pub struct Scene {
     pub pages: Vec<Page>,
     /// The elements, back to front.
     pub elements: Vec<Element>,
+    /// Where the two ends of each connector are (a deleted element's last frame included).
+    pub ends:
+        std::collections::BTreeMap<fs_store::ObjectId, (crate::model::Point, crate::model::Point)>,
 }
 
 /// A board read from a file: new ids, fresh clocks, references inside the file kept.

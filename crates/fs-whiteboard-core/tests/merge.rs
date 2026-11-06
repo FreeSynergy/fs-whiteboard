@@ -5,7 +5,7 @@ mod common;
 use std::str::FromStr;
 
 use fs_store::ObjectId;
-use fs_whiteboard_core::merge::{merge_board, merge_element};
+use fs_whiteboard_core::merge::{merge_board, merge_element as try_merge};
 use fs_whiteboard_core::model::{Anchor, Connector};
 use fs_whiteboard_core::{BoardDoc, Element, ElementDoc, Kind, Page, Rect, Unit};
 use proptest::prelude::*;
@@ -61,6 +61,10 @@ fn replicas(ch: &[(usize, u8, u8, usize)]) -> [ElementDoc; 3] {
             .unwrap();
     }
     docs
+}
+
+fn merge_element(a: &ElementDoc, b: &ElementDoc) -> ElementDoc {
+    try_merge(a, b).unwrap()
 }
 
 fn bytes(d: &ElementDoc) -> String {

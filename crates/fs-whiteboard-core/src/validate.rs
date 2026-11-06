@@ -3,6 +3,10 @@
 //! Pattern: Specification — small checks that every entry point (editor, import) calls, so nothing
 //! unusable reaches the store.
 
+mod docs;
+
+pub use docs::{board_doc, counter, element_doc, page, remote_element};
+
 use crate::error::{Error, Result};
 use crate::model::{Anchor, Element, Kind, Point, Rect, StrokePoint, Style, StyleField};
 
@@ -12,6 +16,8 @@ pub const MAX_STROKE_POINTS: usize = 100_000;
 pub const MAX_TEXT_BYTES: usize = 1024 * 1024;
 /// Most bytes of an import.
 pub const MAX_IMPORT_BYTES: usize = 32 * 1024 * 1024;
+/// Most bytes of an `order` key.
+pub const MAX_ORDER_BYTES: usize = 1024;
 
 /// A finite number.
 pub fn finite(what: &str, v: f64) -> Result<()> {
@@ -41,7 +47,8 @@ pub fn rect(r: &Rect) -> Result<()> {
     if r.width < 0.0 || r.height < 0.0 {
         return Err(Error::invalid("width and height must not be negative"));
     }
-    Ok(())
+    finite("right edge", r.right())?;
+    finite("bottom edge", r.bottom())
 }
 
 /// Text within the limit.
@@ -55,10 +62,45 @@ pub fn text(s: &str) -> Result<()> {
     Ok(())
 }
 
+/// A colour: empty (none) or CSS hex `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`.
+pub fn colour(c: &str) -> Result<()> {
+    let hex = c.strip_prefix('#').unwrap_or("");
+    let ok = c.is_empty()
+        || (matches!(hex.len(), 3 | 4 | 6 | 8) && hex.bytes().all(|b| b.is_ascii_hexdigit()));
+    if ok {
+        Ok(())
+    } else {
+        Err(Error::invalid("a colour must be CSS hex like #1a2b3c"))
+    }
+}
+
+/// An image IRI: `https` or `http`, within the text limit.
+pub fn image_iri(iri: &str) -> Result<()> {
+    text(iri)?;
+    let l = iri.to_ascii_lowercase();
+    if (l.starts_with("https://") || l.starts_with("http://")) && !iri.chars().any(char::is_control)
+    {
+        Ok(())
+    } else {
+        Err(Error::invalid("an image IRI must be http or https"))
+    }
+}
+
+/// An `order` key made by `order`, at most 1 KiB.
+pub fn order_key(k: &str) -> Result<()> {
+    if k.len() > MAX_ORDER_BYTES || !crate::order::is_valid(k) {
+        return Err(Error::invalid(
+            "not a valid order key (base 62, at most 1 KiB)",
+        ));
+    }
+    Ok(())
+}
+
 /// One style property.
 pub fn style_field(f: &StyleField) -> Result<()> {
     match f {
-        StyleField::Stroke(s) | StyleField::Fill(s) | StyleField::FontFamily(s) => text(s),
+        StyleField::Stroke(s) | StyleField::Fill(s) => colour(s),
+        StyleField::FontFamily(s) => text(s),
         StyleField::LineWidth(w) => {
             finite("lineWidth", *w)?;
             if *w < 0.0 {
@@ -114,10 +156,13 @@ fn anchor(a: &Anchor) -> Result<()> {
     point(&a.point)
 }
 
-/// Everything about an element that does not depend on the board: numbers, limits, text.
+/// Everything about an element that does not depend on the board: numbers (also what follows from
+/// them, the bounds after rotation), limits, text, colours.
 pub fn element(e: &Element) -> Result<()> {
     rect(&e.frame)?;
     finite("angle", e.angle)?;
+    finite("angle in degrees", e.angle.to_degrees())?;
+    rect(&crate::geometry::bounds(&e.frame, e.angle))?;
     style(&e.style)?;
     text(&e.label)?;
     match &e.kind {
@@ -128,7 +173,7 @@ pub fn element(e: &Element) -> Result<()> {
             anchor(&c.target)
         }
         Kind::Text { text: t } | Kind::Note { text: t } | Kind::Area { text: t } => text(t),
-        Kind::Image { iri } => text(iri),
+        Kind::Image { iri } => image_iri(iri),
         Kind::Shape { .. } | Kind::Group => Ok(()),
     }
 }

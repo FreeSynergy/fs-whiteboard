@@ -33,7 +33,7 @@ async fn svg_is_well_formed_escaped_rotated_and_draws_strokes() {
         120.0,
     );
     shape.label = "a < b & \"c\"".into();
-    shape.style.stroke = "#00f\" onload=\"x".into();
+    shape.style.font_family = "a\" onload=\"x".into();
     f.ed.add(shape).await.unwrap();
     let pts = vec![
         StrokePoint {
@@ -74,7 +74,7 @@ async fn svg_is_well_formed_escaped_rotated_and_draws_strokes() {
     );
     assert!(svg.contains("a &lt; b &amp; &quot;c&quot;"));
     assert!(
-        svg.contains("stroke=\"#00f&quot; onload=&quot;x\""),
+        svg.contains("font-family=\"a&quot; onload=&quot;x\""),
         "attribute stays inside its quotes"
     );
     assert!(

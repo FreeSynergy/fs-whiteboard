@@ -7,7 +7,7 @@ use fs_store::ObjectId;
 use serde_json::{Value, to_value};
 
 use super::handle::Editor;
-use super::selection::unique;
+use super::selection::{unique, with_members};
 use crate::error::{Error, Result};
 use crate::model::{Anchor, ConnectorEnd, Kind, Point, StyleField};
 use crate::repo::tx::Tx;
@@ -68,12 +68,20 @@ impl Editor {
     pub(super) async fn delete(&self, ids: &[ObjectId]) -> Result<()> {
         let mut g = self.repo.boards.lock().await;
         let st = self.repo.state(&mut g, self.board).await?;
+        let view = st.view();
         let mut tx = Tx::new(&self.repo.actor);
-        for id in unique(ids) {
+        let ids = unique(ids);
+        // a locked element is not hidden through its group either: the whole delete is refused
+        for m in with_members(&view.parents, &ids) {
+            let e = tx.el(st, m)?;
+            if e.locked && !e.deleted {
+                return Err(Error::Locked(m));
+            }
+        }
+        for id in ids {
             if tx.el(st, id)?.deleted {
                 continue;
             }
-            tx.editable(st, id)?;
             tx.set(st, id, vec![(Unit::Deleted, Value::Bool(true))])?;
         }
         let edit = self.repo.commit(st, tx).await?;

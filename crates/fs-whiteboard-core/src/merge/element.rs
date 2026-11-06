@@ -1,14 +1,14 @@
 //! Merge of two element documents.
 //!
 //! Pattern: Strategy — for each unit the larger `(counter, actor)` wins; equal clocks fall back to
-//! the value text. The identity (id, board, kind) never changes after `add`; if two documents
-//! disagree on it (corrupt input), the larger identity text wins as a whole, so the result stays
-//! a pure function of the two.
+//! the value text. The identity (id, board, kind) never changes after `add`; two documents that
+//! disagree on it are refused.
 
 use serde_json::json;
 
 use crate::clock::wins;
 use crate::doc::ElementDoc;
+use crate::error::{Error, Result};
 use crate::model::Kind;
 use crate::unit::Unit;
 
@@ -25,13 +25,14 @@ fn identity(d: &ElementDoc) -> String {
     json!([e.id, e.board, e.kind.name(), fixed]).to_string()
 }
 
-/// The merge of `local` and `remote`.
-pub fn merge_element(local: &ElementDoc, remote: &ElementDoc) -> ElementDoc {
-    let (a, b) = (identity(local), identity(remote));
-    if a != b {
-        return if b > a { remote.clone() } else { local.clone() };
+/// The merge of `local` and `remote`; refused if they are not versions of the same element.
+pub fn merge_element(local: &ElementDoc, remote: &ElementDoc) -> Result<ElementDoc> {
+    if identity(local) != identity(remote) {
+        return Err(Error::invalid("not versions of the same element"));
     }
-    let mut out = local.clone();
+    let (mut remote, mut out) = (remote.clone(), local.clone());
+    remote.sanitize();
+    out.sanitize();
     for unit in Unit::ALL {
         let Some(rv) = unit.read(&remote.element) else {
             continue;
@@ -48,5 +49,5 @@ pub fn merge_element(local: &ElementDoc, remote: &ElementDoc) -> ElementDoc {
             }
         }
     }
-    out
+    Ok(out)
 }

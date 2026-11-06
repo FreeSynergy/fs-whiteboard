@@ -68,7 +68,7 @@ impl Editor {
                 k.source = retarget(&k.source, &map, dx, dy);
                 k.target = retarget(&k.target, &map, dx, dy);
             }
-            tx.create(c);
+            tx.create(c)?;
         }
         let edit = self.repo.commit(st, tx).await?;
         self.record(edit);

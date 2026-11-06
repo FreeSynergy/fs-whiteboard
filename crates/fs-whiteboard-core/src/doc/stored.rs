@@ -57,7 +57,9 @@ pub(crate) fn element_to_stored(
 
 /// The element document in a stored object.
 pub(crate) fn stored_to_element(o: &StoredObject) -> Result<ElementDoc> {
-    Ok(serde_json::from_value(o.content.clone())?)
+    let mut d: ElementDoc = serde_json::from_value(o.content.clone())?;
+    d.sanitize();
+    Ok(d)
 }
 
 /// The stored form of a board.
@@ -81,5 +83,7 @@ pub(crate) fn board_to_stored(
 
 /// The board document in a stored object.
 pub(crate) fn stored_to_board(o: &StoredObject) -> Result<BoardDoc> {
-    Ok(serde_json::from_value(o.content.clone())?)
+    let mut d: BoardDoc = serde_json::from_value(o.content.clone())?;
+    d.sanitize();
+    Ok(d)
 }

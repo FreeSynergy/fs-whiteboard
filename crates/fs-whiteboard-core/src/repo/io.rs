@@ -3,11 +3,11 @@
 //! Pattern: Repository — the only place that talks to the store about this program's objects.
 //! Elements are written with the logged `put`, so the activity log has every change.
 
-use fs_store::{ObjectId, Query};
+use fs_store::{Envelope, ObjectId, Query, StoredObject};
 
 use super::handle::WhiteboardRepo;
 use super::state::BoardState;
-use crate::consts::{BOARD_CONTEXT, BOARD_TYPE, ELEMENT_TYPE};
+use crate::consts::{BOARD_CONTEXT, BOARD_TYPE, ELEMENT_TYPE, TOMBSTONE_TYPE};
 use crate::doc::{
     BoardDoc, ElementDoc, board_to_stored, element_to_stored, stored_to_board, stored_to_element,
 };
@@ -29,7 +29,14 @@ impl WhiteboardRepo {
             .of_type(ELEMENT_TYPE)
             .with_index("board", id.to_string());
         for o in self.store.query(&q).await? {
-            st.put(stored_to_element(&o)?);
+            // one bad object must not stop the others from loading: skip it and report it
+            match stored_to_element(&o)
+                .and_then(|d| crate::validate::element(&d.element).map(|()| d))
+            {
+                Ok(d) if d.element.id == o.envelope.id => st.put(d),
+                Ok(_) => self.report(o.envelope.id, "the envelope id differs from the content id"),
+                Err(e) => self.report(o.envelope.id, &e.to_string()),
+            }
         }
         Ok(Some(st))
     }
@@ -44,5 +51,33 @@ impl WhiteboardRepo {
         let o = board_to_stored(doc, id, &self.instance, &self.actor, None)?;
         self.store.put(o, &self.actor).await?;
         Ok(())
+    }
+}
+
+/// True for the marker a deleted board leaves behind.
+pub(super) fn is_marker(o: &StoredObject) -> bool {
+    o.envelope.object_type == TOMBSTONE_TYPE
+}
+
+impl WhiteboardRepo {
+    /// Leaves the marker of a deleted board (same id, so a late remote finds it).
+    pub(super) async fn mark_deleted(&self, id: ObjectId) -> Result<()> {
+        let mut env = Envelope::new(TOMBSTONE_TYPE, "deleted board");
+        env.id = id;
+        env.context = Some(format!("{BOARD_CONTEXT}-tombstone"));
+        let o = StoredObject::new(env, "application/json", serde_json::json!({}));
+        self.store.put(o, &self.actor).await?;
+        Ok(())
+    }
+
+    pub(super) fn report(&self, id: ObjectId, why: &str) {
+        if let Ok(mut p) = self.problems.lock() {
+            p.push((id, why.to_string()));
+        }
+    }
+
+    /// Objects that were skipped because they could not be read (id and reason), oldest first.
+    pub fn problems(&self) -> Vec<(ObjectId, String)> {
+        self.problems.lock().map(|p| p.clone()).unwrap_or_default()
     }
 }

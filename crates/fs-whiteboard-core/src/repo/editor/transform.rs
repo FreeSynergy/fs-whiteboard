@@ -65,6 +65,14 @@ pub(super) fn move_all(
         if e.locked {
             return Err(Error::Locked(id));
         }
+        if !matches!(e.kind, Kind::Group) {
+            validate::rect(&e.frame.moved(dx, dy))?; // the sum may leave Float64
+            if let Kind::Connector(c) = &e.kind {
+                for a in [&c.source, &c.target] {
+                    validate::point(&shifted(a, dx, dy).point)?;
+                }
+            }
+        }
         let units = (!matches!(e.kind, Kind::Group)).then(|| moved_units(e, dx, dy));
         if let Some(units) = units {
             tx.set(st, id, units)?;

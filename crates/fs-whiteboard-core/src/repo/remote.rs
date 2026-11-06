@@ -1,12 +1,14 @@
 //! `apply_remote`: writes the merge of a remote object with the local one.
 //!
-//! Pattern: Adapter (for a later sync adapter) — `merge` decides, this writes the result and brings
-//! the state and the spatial index along. `fs-hub-client::sync_once` overwrites objects, so it must not
-//! feed this store; the hub delivers only other programs' activities anyway.
+//! Pattern: Adapter (for a later sync adapter) — `merge` decides, this validates what comes in like a
+//! local entry, writes the result and brings the state and the spatial index along. The local object
+//! is read under the board lock. A deleted board leaves a marker, so a late remote cannot bring it
+//! back. `fs-hub-client::sync_once` overwrites objects, so it must not feed this store.
 
 use fs_store::StoredObject;
 
 use super::handle::WhiteboardRepo;
+use super::io::is_marker;
 use crate::consts::{BOARD_TYPE, ELEMENT_TYPE};
 use crate::doc::{board_to_stored, stored_to_board, stored_to_element};
 use crate::error::{Error, Result};
@@ -16,17 +18,30 @@ use crate::validate;
 impl WhiteboardRepo {
     /// Takes a remote version of a board or an element in. The result is the merge of both: per
     /// property, the larger clock wins. Applying the same object again, or in another order, changes
-    /// nothing.
+    /// nothing. Refused: an envelope id that differs from the content id, other identity, a clock
+    /// counter above `u64::MAX / 2`, a board without page, bad numbers, limits or keys.
     pub async fn apply_remote(&self, remote: StoredObject) -> Result<()> {
         let id = remote.envelope.id;
-        let local = self.store.get(id).await?;
         let mut guard = self.boards.lock().await;
+        let local = self.store.get(id).await?;
+        if local.as_ref().is_some_and(is_marker) {
+            return Ok(());
+        }
         match remote.envelope.object_type.as_str() {
             ELEMENT_TYPE => {
                 let rdoc = stored_to_element(&remote)?;
-                validate::element(&rdoc.element)?;
+                if rdoc.element.id != id {
+                    return Err(Error::invalid(
+                        "the envelope id differs from the content id",
+                    ));
+                }
+                validate::element_doc(&rdoc)?;
+                let board = rdoc.element.board;
+                if self.store.get(board).await?.as_ref().is_some_and(is_marker) {
+                    return Ok(());
+                }
                 let doc = match &local {
-                    Some(l) => merge_element(&stored_to_element(l)?, &rdoc),
+                    Some(l) => merge_element(&stored_to_element(l)?, &rdoc)?,
                     None => rdoc,
                 };
                 if local
@@ -35,12 +50,13 @@ impl WhiteboardRepo {
                 {
                     self.save_element(&doc).await?;
                 }
-                if let Some(st) = guard.get_mut(&doc.element.board) {
+                if let Some(st) = guard.get_mut(&board) {
                     st.put(doc);
                 }
             }
             BOARD_TYPE => {
                 let rdoc = stored_to_board(&remote)?;
+                validate::board_doc(&rdoc)?;
                 let doc = match &local {
                     Some(l) => merge_board(&stored_to_board(l)?, &rdoc),
                     None => rdoc,

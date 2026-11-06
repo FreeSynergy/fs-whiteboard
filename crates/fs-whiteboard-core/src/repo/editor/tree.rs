@@ -54,7 +54,7 @@ impl Editor {
                 parent: p,
             });
         }
-        tx.create(group);
+        tx.create(group)?;
         for m in &ids {
             tx.set(st, *m, vec![(Unit::Parent, parent_value(Some(id)))])?;
         }
@@ -139,6 +139,10 @@ impl Editor {
         if let Some(pg) = target {
             let moving: BTreeSet<ObjectId> = with_members(&view.parents, &ids);
             for m in moving {
+                let e = tx.el(st, m)?;
+                if e.page != pg && e.locked && !e.deleted {
+                    return Err(Error::Locked(m));
+                }
                 if tx.el(st, m)?.page != pg {
                     tx.set(st, m, vec![(Unit::Page, to_value(pg)?)])?;
                 }

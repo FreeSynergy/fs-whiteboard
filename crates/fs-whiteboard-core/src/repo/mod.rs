@@ -5,6 +5,7 @@
 
 mod boards;
 mod editor;
+mod ends;
 mod feed;
 mod handle;
 mod history;

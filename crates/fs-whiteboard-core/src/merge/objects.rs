@@ -25,7 +25,7 @@ pub fn merge_objects(
     }
     match local.envelope.object_type.as_str() {
         ELEMENT_TYPE => {
-            let m = merge_element(&stored_to_element(local)?, &stored_to_element(remote)?);
+            let m = merge_element(&stored_to_element(local)?, &stored_to_element(remote)?)?;
             element_to_stored(&m, instance, Some(local))
         }
         BOARD_TYPE => {

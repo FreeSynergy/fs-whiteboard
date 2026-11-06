@@ -21,14 +21,16 @@ pub fn effective_parents(
     let mut done: BTreeSet<ObjectId> = BTreeSet::new();
     for &start in elements.keys() {
         let mut path: Vec<ObjectId> = Vec::new();
+        let mut on_path: BTreeMap<ObjectId, usize> = BTreeMap::new();
         let mut at = Some(start);
         while let Some(id) = at.filter(|id| !done.contains(id)) {
-            if let Some(pos) = path.iter().position(|p| *p == id) {
+            if let Some(&pos) = on_path.get(&id) {
                 if let Some(lowest) = path[pos..].iter().min() {
                     parents.insert(*lowest, None);
                 }
                 break;
             }
+            on_path.insert(id, path.len());
             path.push(id);
             at = parents[&id];
         }

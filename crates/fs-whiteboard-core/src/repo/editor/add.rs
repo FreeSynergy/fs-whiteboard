@@ -63,7 +63,7 @@ impl Editor {
             ..element
         };
         let mut tx = Tx::new(&self.repo.actor);
-        tx.create(new);
+        tx.create(new)?;
         let edit = self.repo.commit(st, tx).await?;
         self.record(edit);
         let view = st.view();

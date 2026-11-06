@@ -12,7 +12,7 @@ use super::handle::Editor;
 use super::selection::with_members;
 use crate::error::{Error, Result};
 use crate::format::{self, Scene};
-use crate::model::Element;
+use crate::model::{Anchor, Element, Kind};
 use crate::reading::effective_pages;
 
 impl Editor {
@@ -53,6 +53,30 @@ impl Editor {
             .map(|e| view.shown(e))
             .collect();
         elements.sort_by(|a, b| (a.order.as_bytes(), a.id).cmp(&(b.order.as_bytes(), b.id)));
+        // a reference to something that is not exported becomes a free end at its position, and a
+        // parent outside the set is none, so every export can be imported again
+        let inside: BTreeSet<ObjectId> = elements.iter().map(|e| e.id).collect();
+        for e in &mut elements {
+            e.parent = e.parent.filter(|p| inside.contains(p));
+            if let (Kind::Connector(c), Some((a, b))) =
+                (&mut e.kind, view.connector_ends.get(&e.id))
+            {
+                for (anchor, at) in [(&mut c.source, a), (&mut c.target, b)] {
+                    if anchor.element.is_some_and(|x| !inside.contains(&x)) {
+                        *anchor = Anchor {
+                            element: None,
+                            point: *at,
+                        };
+                    }
+                }
+            }
+        }
+        let ends = view
+            .connector_ends
+            .iter()
+            .filter(|(id, _)| inside.contains(id))
+            .map(|(k, v)| (*k, *v))
+            .collect();
         let pages = effective_pages(&st.pages())
             .into_iter()
             .filter(|p| !p.deleted && page.is_none_or(|x| p.id == x))
@@ -61,6 +85,7 @@ impl Editor {
             name: st.doc.name.clone(),
             pages,
             elements,
+            ends,
         };
         Ok(Blob {
             media_type: fmt.media_type().to_string(),

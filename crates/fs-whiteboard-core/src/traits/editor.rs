@@ -9,7 +9,6 @@ use fs_store::{Blob, ObjectId};
 
 use crate::error::Result;
 use crate::model::{Align, Board, ConnectorEnd, Cursor, Element, Paged, Point, Rect, StyleField};
-use crate::reading::End;
 use crate::unsupported::not_possible;
 
 /// An edit of a locked element is refused, other than `set_locked`.
@@ -29,8 +28,6 @@ pub trait BoardEditor: Send + Sync {
     ) -> Result<Paged<Element>>;
     /// `canvas.navigate`: the area all shown elements of a page cover.
     async fn bounds(&self, page: ObjectId) -> Result<Option<Rect>>;
-    /// Where the ends of a connector are (not a contract method: a reading rule made available).
-    async fn connector_ends(&self, id: ObjectId) -> Result<(End, End)>;
 
     /// `page.add`: a new last page.
     async fn add_page(&self, _name: &str) -> Result<(Board, ObjectId)> {

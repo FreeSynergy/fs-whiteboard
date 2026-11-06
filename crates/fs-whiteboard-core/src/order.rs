@@ -4,10 +4,11 @@
 //! `0-9A-Za-z`, which sort as bytes in digit order. A key never ends in `0`, so two different keys are
 //! two different numbers. There is no fixed length: a key grows only when no shorter one fits.
 //!
-//! Measured (tests/order.rs): 10 000 appends at the end give keys of up to 165 characters (one more
-//! character per 61 appends); 10 000 prepends 323; 10 000 inserts into one ever-shrinking gap, the
-//! worst case that no scheme with immutable keys can beat, 2 001 (about 5 inserts per character);
-//! random positions stay far below 24.
+//! Appending counts upward: the first key is `V`, then `W1`..`Wz`, `X01`..`Xzz`, and so on, where the
+//! first character tells how many counter digits follow. A key grows with the logarithm of the number
+//! of appends (tests/order.rs measures 10 000 appends: 4 characters). Inserting again and again into
+//! one shrinking gap is the worst case no scheme with unchanging keys can beat (about 5 inserts per
+//! character); the editor refuses a key over 1 KiB, see `validate::MAX_ORDER_BYTES`.
 
 const DIGITS: &[u8; 62] = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 const TOP: usize = 62;
@@ -31,8 +32,9 @@ pub fn is_valid(key: &str) -> bool {
 /// A key strictly between `a` and `b`, with `None` as the open end on either side. If `a` is not
 /// below `b`, the key goes after `a`.
 pub fn between(a: Option<&str>, b: Option<&str>) -> String {
-    let a = a.unwrap_or("");
-    match b.filter(|b| !b.is_empty()) {
+    // anything that is not a key of this module counts as an open end, so no input can panic
+    let a = a.filter(|k| is_valid(k)).unwrap_or("");
+    match b.filter(|k| is_valid(k)) {
         None => after(a),
         Some(b) if !a.is_empty() && a >= b => after(a),
         Some(b) if a.is_empty() => before(b),
@@ -52,9 +54,47 @@ pub fn spread(a: Option<&str>, b: Option<&str>, n: usize) -> Vec<String> {
     out
 }
 
+const CLASS0: usize = 31; // `V`: no counter digits
+
+/// The next key in the counting sequence, if `a` belongs to it.
+fn count_up(a: &str) -> Option<String> {
+    let class = digit(a, 0);
+    let width = class.checked_sub(CLASS0)?;
+    if a.len() != width + 1 {
+        return None;
+    }
+    let mut digits: Vec<usize> = (1..a.len()).map(|i| digit(a, i)).collect();
+    loop {
+        let mut i = digits.len();
+        loop {
+            if i == 0 {
+                // all digits were `z`: the next class, counter 0..01
+                (class + 1 < TOP).then_some(())?;
+                let mut next = String::from(ch(class + 1));
+                next.extend(std::iter::repeat_n('0', width));
+                next.push('1');
+                return Some(next);
+            }
+            i -= 1;
+            if digits[i] + 1 < TOP {
+                digits[i] += 1;
+                break;
+            }
+            digits[i] = 0;
+        }
+        if digits.last().is_none_or(|d| *d != 0) {
+            let tail: String = digits.iter().map(|d| ch(*d)).collect();
+            return Some(format!("{}{tail}", ch(class)));
+        }
+    }
+}
+
 fn after(a: &str) -> String {
     if a.is_empty() {
         return "V".into();
+    }
+    if let Some(k) = count_up(a) {
+        return k;
     }
     for i in 0..a.len() {
         let d = digit(a, i);

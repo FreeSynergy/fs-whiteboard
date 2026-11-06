@@ -148,3 +148,19 @@ pub async fn raw(store: &Arc<dyn Store>, id: ObjectId) -> String {
 pub async fn order_of(ed: &dyn BoardEditor, page: ObjectId) -> Vec<ObjectId> {
     all(ed, page).await.iter().map(|e| e.id).collect()
 }
+
+/// The ids of the elements of a page that touch `area`.
+pub async fn ids_in(ed: &dyn BoardEditor, page: ObjectId, area: Rect) -> Vec<ObjectId> {
+    ed.elements(page, Some(area), None)
+        .await
+        .unwrap()
+        .items
+        .iter()
+        .map(|e| e.id)
+        .collect()
+}
+
+/// The stored object of an element.
+pub async fn element_object(f: &Fixture, id: ObjectId) -> fs_store::StoredObject {
+    f.store.get(id).await.unwrap().unwrap()
+}

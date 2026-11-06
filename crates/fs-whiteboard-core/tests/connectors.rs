@@ -32,7 +32,7 @@ async fn a_connector_end_on_a_deleted_element_reports_its_last_frame() {
         .id;
     f.ed.move_by(&[s], 3.0, 4.0).await.unwrap();
     let moved = Rect::new(3.0, 4.0, 10.0, 10.0);
-    let (src, tgt) = f.ed.connector_ends(conn).await.unwrap();
+    let (src, tgt) = f.repo.connector_ends(f.board, conn).await.unwrap();
     assert_eq!(
         src,
         End::Attached {
@@ -43,7 +43,7 @@ async fn a_connector_end_on_a_deleted_element_reports_its_last_frame() {
     );
     assert_eq!(tgt, End::Free(Point { x: 7.0, y: 8.0 }));
     f.ed.delete(&[s]).await.unwrap();
-    let (src, _) = f.ed.connector_ends(conn).await.unwrap();
+    let (src, _) = f.repo.connector_ends(f.board, conn).await.unwrap();
     assert_eq!(
         src,
         End::Attached {
@@ -53,7 +53,7 @@ async fn a_connector_end_on_a_deleted_element_reports_its_last_frame() {
         }
     );
     assert!(
-        f.ed.connector_ends(t).await.is_err(),
+        f.repo.connector_ends(f.board, t).await.is_err(),
         "a rectangle has no ends"
     );
 }

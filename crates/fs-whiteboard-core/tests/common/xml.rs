@@ -58,6 +58,7 @@ fn entities(text: &str) -> Result<(), String> {
 }
 
 fn attributes(mut s: &str) -> Result<(), String> {
+    let mut seen: Vec<String> = Vec::new();
     s = s.trim();
     while !s.is_empty() {
         let eq = s
@@ -67,6 +68,10 @@ fn attributes(mut s: &str) -> Result<(), String> {
         if name.is_empty() || name.contains(char::is_whitespace) {
             return Err(format!("bad attribute name {name:?}"));
         }
+        if seen.iter().any(|n| n == name) {
+            return Err(format!("duplicate attribute {name}"));
+        }
+        seen.push(name.to_string());
         let rest = s[eq + 1..].trim_start();
         let quote = rest
             .chars()

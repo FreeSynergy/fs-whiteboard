@@ -8,7 +8,10 @@ use crate::doc::BoardDoc;
 
 /// The merge of `local` and `remote`.
 pub fn merge_board(local: &BoardDoc, remote: &BoardDoc) -> BoardDoc {
-    let mut out = local.clone();
+    let (mut out, mut remote) = (local.clone(), remote.clone());
+    out.sanitize();
+    remote.sanitize();
+    let remote = &remote;
     let (lc, rc) = (out.clock("name"), remote.clock("name"));
     if wins(&lc, &out.name, &rc, &remote.name) {
         out.name.clone_from(&remote.name);

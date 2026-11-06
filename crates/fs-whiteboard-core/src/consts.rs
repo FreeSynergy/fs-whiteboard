@@ -10,3 +10,5 @@ pub const BOARD_TYPE: &str = "Collection";
 pub const BOARD_CONTEXT: &str = "whiteboard";
 pub(crate) const ELEMENT_CONTENT: &str = "application/vnd.freesynergy.whiteboard-element+json";
 pub(crate) const BOARD_CONTENT: &str = "application/vnd.freesynergy.whiteboard-board+json";
+/// Store type of the marker a deleted board leaves.
+pub const TOMBSTONE_TYPE: &str = "WhiteboardTombstone";

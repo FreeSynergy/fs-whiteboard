@@ -6,6 +6,7 @@
 
 mod draw;
 mod escape;
+mod paint;
 mod render;
 
 pub use escape::escape;

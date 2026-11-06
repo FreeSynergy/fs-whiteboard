@@ -68,7 +68,11 @@ async fn deleting_a_board_leaves_nothing_in_the_store() {
         f.store.query(&mine).await.unwrap().is_empty(),
         "no element left, deleted ones included"
     );
-    assert!(f.store.get(f.board).await.unwrap().is_none());
+    let marker = f.store.get(f.board).await.unwrap().unwrap();
+    assert_eq!(
+        marker.envelope.object_type, "WhiteboardTombstone",
+        "only the marker is left"
+    );
     for id in ids {
         assert!(f.store.get(id).await.unwrap().is_none());
     }
@@ -82,10 +86,10 @@ async fn deleting_a_board_leaves_nothing_in_the_store() {
         .collect();
     assert_eq!(
         left.len(),
-        2,
-        "only the other board and its element: {left:?}"
+        3,
+        "the other board, its element, the marker: {left:?}"
     );
-    assert!(left.contains(&keep.id) && left.contains(&kept));
+    assert!(left.contains(&keep.id) && left.contains(&kept) && left.contains(&f.board));
     assert!(f.repo.open(f.board).await.unwrap().is_none());
 
     let mut gone = 0;
