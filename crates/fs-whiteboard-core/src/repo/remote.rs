@@ -9,7 +9,7 @@ use fs_store::StoredObject;
 
 use super::handle::WhiteboardRepo;
 use super::io::is_marker;
-use crate::consts::{BOARD_TYPE, ELEMENT_TYPE, TOMBSTONE_TYPE};
+use crate::consts::{BOARD_CONTEXT, BOARD_TYPE, ELEMENT_TYPE, TOMBSTONE_TYPE};
 use crate::doc::{board_to_stored, stored_to_board, stored_to_element};
 use crate::error::{Error, Result};
 use crate::merge::{merge_board, merge_element};
@@ -24,8 +24,18 @@ impl WhiteboardRepo {
         let id = remote.envelope.id;
         let mut guard = self.boards.lock().await;
         let mut local = self.store.get(id).await?;
+        // this program's objects only: the incoming one, the one it would replace or delete
+        let kind =
+            Kind::of(&remote).ok_or_else(|| Error::invalid("not an object of this program"))?;
         if local.as_ref().is_some_and(is_marker) {
             return Ok(());
+        }
+        if let Some(l) = &local {
+            let same = Kind::of(l) == Some(kind);
+            let deletes_board = kind == Kind::Marker && Kind::of(l) == Some(Kind::Board);
+            if !(same || deletes_board) {
+                return Err(Error::invalid("the id belongs to another object"));
+            }
         }
         if remote.envelope.object_type == TOMBSTONE_TYPE {
             // the board was deleted elsewhere: it goes here too
@@ -97,6 +107,28 @@ impl WhiteboardRepo {
                 d.element.id == o.envelope.id && validate::element(&d.element).is_ok()
             }),
             _ => stored_to_board(o).is_ok(),
+        }
+    }
+}
+
+/// Which of this program's kinds of object a stored object is.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Kind {
+    Element,
+    Board,
+    Marker,
+}
+
+impl Kind {
+    fn of(o: &StoredObject) -> Option<Kind> {
+        let ctx = o.envelope.context.as_deref();
+        match o.envelope.object_type.as_str() {
+            ELEMENT_TYPE => Some(Kind::Element),
+            BOARD_TYPE if ctx == Some(BOARD_CONTEXT) => Some(Kind::Board),
+            TOMBSTONE_TYPE if ctx == Some(&format!("{BOARD_CONTEXT}-tombstone")[..]) => {
+                Some(Kind::Marker)
+            }
+            _ => None,
         }
     }
 }

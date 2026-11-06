@@ -49,10 +49,15 @@ proptest! {
             assert!(again.problems().is_empty(), "{:?}", again.problems());
             let kept = all(&*ed, f.page).await.len();
             assert!(kept >= ids.len().min(1) || ids.is_empty());
-            let blob = ed.export(None, &[], OWN).await.unwrap();
-            let b = again.import(OWN, &blob.bytes).await.unwrap();
-            let ed2 = again.open(b.id).await.unwrap().unwrap();
-            assert_eq!(all(&*ed2, b.pages[0].id).await.len(), kept);
+            // one check for both ways: what is written can be read again, or nothing is written
+            match ed.export(None, &[], OWN).await {
+                Ok(blob) => {
+                    let b = again.import(OWN, &blob.bytes).await.unwrap();
+                    let ed2 = again.open(b.id).await.unwrap().unwrap();
+                    assert_eq!(all(&*ed2, b.pages[0].id).await.len(), kept);
+                }
+                Err(e) => assert!(matches!(e, fs_whiteboard_core::Error::Invalid(_)), "{e:?}"),
+            }
         });
     }
 }
@@ -87,4 +92,60 @@ async fn coordinates_beyond_1e15_are_refused_everywhere() {
     let mut o = element_object(&f, a).await;
     o.content["frame"]["x"] = json!(over);
     assert!(f.repo.apply_remote(o).await.is_err());
+}
+
+#[tokio::test]
+async fn strokes_stay_within_the_limits_and_far_connectors_export() {
+    use fs_whiteboard_core::{Anchor, Connector, Element, Kind, StrokePoint};
+    let f = fixture().await;
+    let pt = |x: f64| StrokePoint {
+        x,
+        y: 0.0,
+        pressure: None,
+    };
+    for bad in [1e15 + 1e5, -2e15, 1e300, f64::MAX] {
+        let k = Kind::Stroke {
+            points: vec![pt(0.0), pt(bad)],
+        };
+        assert!(
+            f.ed.add(Element::new(f.page, k, Rect::new(0.0, 0.0, 1.0, 1.0)))
+                .await
+                .is_err()
+        );
+    }
+    let k = Kind::Stroke {
+        points: vec![pt(1e15), pt(-1e15)],
+    };
+    let wide = Rect::new(-1e15, 0.0, 1e15, 1.0);
+    f.ed.add(Element::new(f.page, k, wide)).await.unwrap();
+    let (a, b) = (f.rect(-1e15, 0.0).await, f.rect(1e15, 0.0).await);
+    let ends = Connector {
+        source: Anchor {
+            element: Some(a),
+            ..Anchor::default()
+        },
+        target: Anchor {
+            element: Some(b),
+            ..Anchor::default()
+        },
+        ..Connector::default()
+    };
+    f.ed.add(Element::new(
+        f.page,
+        Kind::Connector(ends),
+        Rect::new(0.0, 0.0, 1.0, 1.0),
+    ))
+    .await
+    .unwrap();
+    let blob = f.ed.export(None, &[], OWN).await.unwrap();
+    let copy = f.repo.import(OWN, &blob.bytes).await.unwrap();
+    let ed = f.repo.open(copy.id).await.unwrap().unwrap();
+    assert_eq!(all(&*ed, copy.pages[0].id).await.len(), 4);
+    let svg =
+        f.ed.export(Some(f.page), &[], "image/svg+xml")
+            .await
+            .unwrap();
+    let text = String::from_utf8(svg.bytes).unwrap();
+    assert!(!text.contains("inf") && !text.contains("NaN"), "{text}");
+    roxmltree::Document::parse(&text).unwrap();
 }

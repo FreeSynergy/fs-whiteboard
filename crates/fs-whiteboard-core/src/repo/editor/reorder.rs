@@ -45,11 +45,13 @@ impl Editor {
                 "the elements and the one to go behind must share a page",
             ));
         }
+        let view = st.view();
         let moved = sorted(ids.iter().map(|id| &st.elements[id]).collect());
+        // hidden elements are not in the way: they cannot be seen, and cannot block the front
         let others = sorted(
             st.elements
                 .values()
-                .filter(|e| e.page == page && !ids.contains(&e.id))
+                .filter(|e| e.page == page && !ids.contains(&e.id) && !view.hidden.contains(&e.id))
                 .collect(),
         );
         let pos = anchor

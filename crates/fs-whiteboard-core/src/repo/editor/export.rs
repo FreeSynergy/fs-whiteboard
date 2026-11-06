@@ -14,6 +14,7 @@ use crate::error::{Error, Result};
 use crate::format::{self, Scene};
 use crate::model::{Anchor, Element, Kind};
 use crate::reading::effective_pages;
+use crate::validate;
 
 impl Editor {
     pub(super) async fn export(
@@ -70,6 +71,18 @@ impl Editor {
                     }
                 }
             }
+        }
+        // a connector is written with its stored frame (its place is in its ends); what cannot be
+        // imported again by the same checks is not written
+        for e in &mut elements {
+            if let Some(stored) = st
+                .elements
+                .get(&e.id)
+                .filter(|_| matches!(e.kind, Kind::Connector(_)))
+            {
+                (e.frame, e.angle) = (stored.frame, stored.angle);
+            }
+            validate::remote_element(e)?;
         }
         let ends = view
             .connector_ends

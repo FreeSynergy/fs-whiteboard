@@ -133,8 +133,8 @@ fn stroke_points(points: &[StrokePoint]) -> Result<()> {
         )));
     }
     for p in points {
-        finite("x", p.x)?;
-        finite("y", p.y)?;
+        coord("x", p.x)?;
+        coord("y", p.y)?;
         if p.pressure
             .is_some_and(|v| !(v.is_finite() && (0.0..=1.0).contains(&v)))
         {
@@ -163,7 +163,14 @@ pub fn element(e: &Element) -> Result<()> {
     style(&e.style)?;
     text(&e.label)?;
     match &e.kind {
-        Kind::Stroke { points } => stroke_points(points),
+        Kind::Stroke { points } => {
+            stroke_points(points)?;
+            // where a point lands in SVG: frame origin plus fraction times size
+            points.iter().try_for_each(|p| {
+                finite("stroke x", e.frame.x + p.x * e.frame.width)?;
+                finite("stroke y", e.frame.y + p.y * e.frame.height)
+            })
+        }
         Kind::Connector(c) => {
             text(&c.label)?;
             anchor(&c.source)?;

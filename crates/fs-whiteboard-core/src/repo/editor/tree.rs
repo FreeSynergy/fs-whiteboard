@@ -47,7 +47,7 @@ impl Editor {
         let mut group = Element::new(page, Kind::Group, frame);
         let id = ObjectId::new();
         (group.id, group.board, group.parent, group.order) =
-            (id, self.board, parent, front_key(st));
+            (id, self.board, parent, front_key(st, &view));
         if let Some(p) = parent.filter(|p| ids.iter().any(|i| is_within(&view.parents, *p, *i))) {
             return Err(Error::Cycle {
                 child: id,

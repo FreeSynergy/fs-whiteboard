@@ -9,22 +9,25 @@ use super::handle::Editor;
 use crate::error::{Error, Result};
 use crate::model::{Element, Kind};
 use crate::order;
+use crate::reading::View;
 use crate::repo::state::BoardState;
 use crate::repo::tx::Tx;
 use crate::validate;
 
-/// The largest order key on the board (any page), or `None` if there is no element.
-pub(super) fn highest_key(st: &BoardState) -> Option<String> {
+/// The largest order key among the elements that are shown (a hidden one cannot block the front),
+/// or `None` if there is none.
+pub(super) fn highest_key(st: &BoardState, view: &View) -> Option<String> {
     st.elements
         .values()
+        .filter(|e| !view.hidden.contains(&e.id))
         .map(|e| (e.order.as_bytes(), e.id))
         .max()
         .and_then(|(_, id)| st.elements.get(&id).map(|e| e.order.clone()))
 }
 
 /// A key in front of every element of the board.
-pub(super) fn front_key(st: &BoardState) -> String {
-    order::between(highest_key(st).as_deref(), None)
+pub(super) fn front_key(st: &BoardState, view: &View) -> String {
+    order::between(highest_key(st, view).as_deref(), None)
 }
 
 impl Editor {
@@ -58,7 +61,7 @@ impl Editor {
         let new = Element {
             id,
             board: self.board,
-            order: front_key(st),
+            order: front_key(st, &view),
             deleted: false,
             ..element
         };

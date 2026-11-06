@@ -56,7 +56,11 @@ impl Editor {
         all.sort_by(|a, b| (a.order.as_bytes(), a.id).cmp(&(b.order.as_bytes(), b.id)));
         let map: BTreeMap<ObjectId, ObjectId> =
             all.iter().map(|e| (e.id, ObjectId::new())).collect();
-        let keys = order::spread(super::add::highest_key(st).as_deref(), None, all.len());
+        let keys = order::spread(
+            super::add::highest_key(st, &view).as_deref(),
+            None,
+            all.len(),
+        );
         for (e, key) in all.into_iter().zip(keys) {
             let mut c = e.clone();
             c.id = map[&e.id];

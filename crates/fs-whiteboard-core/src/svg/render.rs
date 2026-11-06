@@ -8,6 +8,7 @@ use super::{draw, escape};
 
 use crate::format::Scene;
 use crate::geometry::{bounds, union_all};
+use crate::model::Rect;
 
 const PAD: f64 = 10.0;
 
@@ -16,7 +17,15 @@ pub fn render(scene: &Scene) -> String {
     let rects: Vec<_> = scene
         .elements
         .iter()
-        .map(|e| bounds(&e.frame, e.angle))
+        .map(|e| match scene.ends.get(&e.id) {
+            Some((a, b)) => Rect::new(
+                a.x.min(b.x),
+                a.y.min(b.y),
+                (a.x - b.x).abs(),
+                (a.y - b.y).abs(),
+            ),
+            None => bounds(&e.frame, e.angle),
+        })
         .collect();
     let (x, y, w, h) = union_all(&rects).map_or((0.0, 0.0, 100.0, 100.0), |r| {
         (
