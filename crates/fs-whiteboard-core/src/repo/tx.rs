@@ -107,6 +107,11 @@ impl Tx {
     /// A new element: it exists from the first clock on; undo of the add deletes it.
     pub(super) fn create(&mut self, element: Element) -> Result<()> {
         validate::element(&element)?;
+        if element.order.len() > validate::MAX_ORDER_BYTES {
+            return Err(Error::TooLarge(
+                "the order keys of this place are used up; move the elements elsewhere".into(),
+            ));
+        }
         let id = element.id;
         let doc = ElementDoc::fresh(element, &self.actor);
         let clock = doc.clock(Unit::Deleted);

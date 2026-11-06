@@ -46,7 +46,8 @@ impl Subscription {
             };
             let Ok(set) = act.change_set() else { continue };
             let image = set.after.as_ref().or(set.before.as_ref());
-            if !image.is_some_and(|o| on_board(o, self.board)) {
+            let marker = |o: &StoredObject| o.envelope.object_type == crate::consts::TOMBSTONE_TYPE;
+            if !image.is_some_and(|o| on_board(o, self.board) && !marker(o)) {
                 continue;
             }
             return match (act.kind, set.after) {

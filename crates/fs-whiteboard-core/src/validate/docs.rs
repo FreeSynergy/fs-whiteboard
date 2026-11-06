@@ -3,7 +3,7 @@
 //! Pattern: Specification — an element or a board from outside is checked like a local entry, plus
 //! a valid `order` and clock counters that leave room to count on.
 
-use super::{element, order_key, text};
+use super::{MAX_ORDER_BYTES, element, text};
 use crate::error::{Error, Result};
 use crate::model::Element;
 
@@ -50,4 +50,38 @@ pub fn board_doc(d: &crate::doc::BoardDoc) -> Result<()> {
     }
     d.pages.values().try_for_each(page)?;
     d.clocks.values().try_for_each(|c| counter(c.counter()))
+}
+
+/// A colour: empty (none) or CSS hex `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`.
+pub fn colour(c: &str) -> Result<()> {
+    let hex = c.strip_prefix('#').unwrap_or("");
+    let ok = c.is_empty()
+        || (matches!(hex.len(), 3 | 4 | 6 | 8) && hex.bytes().all(|b| b.is_ascii_hexdigit()));
+    if ok {
+        Ok(())
+    } else {
+        Err(Error::invalid("a colour must be CSS hex like #1a2b3c"))
+    }
+}
+
+/// An image IRI: `https` or `http`, within the text limit.
+pub fn image_iri(iri: &str) -> Result<()> {
+    text(iri)?;
+    let l = iri.to_ascii_lowercase();
+    if (l.starts_with("https://") || l.starts_with("http://")) && !iri.chars().any(char::is_control)
+    {
+        Ok(())
+    } else {
+        Err(Error::invalid("an image IRI must be http or https"))
+    }
+}
+
+/// An `order` key made by `order`, at most 1 KiB.
+pub fn order_key(k: &str) -> Result<()> {
+    if k.len() > MAX_ORDER_BYTES || !crate::order::is_valid(k) {
+        return Err(Error::invalid(
+            "not a valid order key (base 62, at most 1 KiB)",
+        ));
+    }
+    Ok(())
 }

@@ -9,7 +9,7 @@ use fs_store::StoredObject;
 
 use super::handle::WhiteboardRepo;
 use super::io::is_marker;
-use crate::consts::{BOARD_TYPE, ELEMENT_TYPE};
+use crate::consts::{BOARD_TYPE, ELEMENT_TYPE, TOMBSTONE_TYPE};
 use crate::doc::{board_to_stored, stored_to_board, stored_to_element};
 use crate::error::{Error, Result};
 use crate::merge::{merge_board, merge_element};
@@ -23,9 +23,17 @@ impl WhiteboardRepo {
     pub async fn apply_remote(&self, remote: StoredObject) -> Result<()> {
         let id = remote.envelope.id;
         let mut guard = self.boards.lock().await;
-        let local = self.store.get(id).await?;
+        let mut local = self.store.get(id).await?;
         if local.as_ref().is_some_and(is_marker) {
             return Ok(());
+        }
+        if remote.envelope.object_type == TOMBSTONE_TYPE {
+            // the board was deleted elsewhere: it goes here too
+            return self.purge(&mut guard, id).await;
+        }
+        // a broken local object is replaced by a valid remote one
+        if local.as_ref().is_some_and(|l| !Self::readable(l)) {
+            local = None;
         }
         match remote.envelope.object_type.as_str() {
             ELEMENT_TYPE => {
@@ -78,6 +86,17 @@ impl WhiteboardRepo {
                 )));
             }
         }
+        self.clear_problem(id);
         Ok(())
+    }
+
+    /// True if a stored object of this program reads and passes the checks.
+    fn readable(o: &StoredObject) -> bool {
+        match o.envelope.object_type.as_str() {
+            ELEMENT_TYPE => stored_to_element(o).is_ok_and(|d| {
+                d.element.id == o.envelope.id && validate::element(&d.element).is_ok()
+            }),
+            _ => stored_to_board(o).is_ok(),
+        }
     }
 }

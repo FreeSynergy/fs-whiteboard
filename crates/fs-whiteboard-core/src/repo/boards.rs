@@ -9,7 +9,7 @@ use fs_store::{ObjectId, Query};
 
 use super::editor::Editor;
 use super::handle::WhiteboardRepo;
-use crate::consts::{BOARD_CONTEXT, BOARD_TYPE, ELEMENT_TYPE};
+use crate::consts::{BOARD_CONTEXT, BOARD_TYPE};
 use crate::doc::{BoardDoc, board_to_stored};
 use crate::error::{Error, Result};
 use crate::format;
@@ -85,15 +85,7 @@ impl Boards for WhiteboardRepo {
     async fn delete(&self, id: ObjectId) -> Result<()> {
         let mut guard = self.boards.lock().await;
         self.state(&mut guard, id).await?;
-        let q = Query::new()
-            .of_type(ELEMENT_TYPE)
-            .with_index("board", id.to_string());
-        for o in self.store.query(&q).await? {
-            self.store.delete(o.envelope.id, &self.actor).await?;
-        }
-        self.store.delete(id, &self.actor).await?;
-        self.mark_deleted(id).await?;
-        guard.remove(&id);
+        self.purge(&mut guard, id).await?;
         Ok(())
     }
 

@@ -5,7 +5,9 @@
 
 mod docs;
 
-pub use docs::{board_doc, counter, element_doc, page, remote_element};
+pub use docs::{
+    board_doc, colour, counter, element_doc, image_iri, order_key, page, remote_element,
+};
 
 use crate::error::{Error, Result};
 use crate::model::{Anchor, Element, Kind, Point, Rect, StrokePoint, Style, StyleField};
@@ -16,6 +18,8 @@ pub const MAX_STROKE_POINTS: usize = 100_000;
 pub const MAX_TEXT_BYTES: usize = 1024 * 1024;
 /// Most bytes of an import.
 pub const MAX_IMPORT_BYTES: usize = 32 * 1024 * 1024;
+/// Largest coordinate or size (absolute value), so sums and unions stay far inside Float64.
+pub const MAX_COORD: f64 = 1e15;
 /// Most bytes of an `order` key.
 pub const MAX_ORDER_BYTES: usize = 1024;
 
@@ -28,14 +32,36 @@ pub fn finite(what: &str, v: f64) -> Result<()> {
     }
 }
 
-/// A point with finite coordinates.
+/// A coordinate or size: finite and within +-1e15.
+pub fn coord(what: &str, v: f64) -> Result<()> {
+    finite(what, v)?;
+    if v.abs() > MAX_COORD {
+        return Err(Error::invalid(format!("{what} is beyond +-1e15")));
+    }
+    Ok(())
+}
+
+/// A point within the limits.
 pub fn point(p: &Point) -> Result<()> {
-    finite("x", p.x)?;
-    finite("y", p.y)
+    coord("x", p.x)?;
+    coord("y", p.y)
 }
 
 /// A rectangle with finite numbers and no negative size.
 pub fn rect(r: &Rect) -> Result<()> {
+    for (n, v) in [
+        ("x", r.x),
+        ("y", r.y),
+        ("width", r.width),
+        ("height", r.height),
+    ] {
+        coord(n, v)?;
+    }
+    rect_finite(r)
+}
+
+/// A rectangle that is finite and not negative, whatever its size (a union or a rotated box).
+pub fn rect_finite(r: &Rect) -> Result<()> {
     for (n, v) in [
         ("x", r.x),
         ("y", r.y),
@@ -58,40 +84,6 @@ pub fn text(s: &str) -> Result<()> {
             "text of {} bytes, at most {MAX_TEXT_BYTES}",
             s.len()
         )));
-    }
-    Ok(())
-}
-
-/// A colour: empty (none) or CSS hex `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`.
-pub fn colour(c: &str) -> Result<()> {
-    let hex = c.strip_prefix('#').unwrap_or("");
-    let ok = c.is_empty()
-        || (matches!(hex.len(), 3 | 4 | 6 | 8) && hex.bytes().all(|b| b.is_ascii_hexdigit()));
-    if ok {
-        Ok(())
-    } else {
-        Err(Error::invalid("a colour must be CSS hex like #1a2b3c"))
-    }
-}
-
-/// An image IRI: `https` or `http`, within the text limit.
-pub fn image_iri(iri: &str) -> Result<()> {
-    text(iri)?;
-    let l = iri.to_ascii_lowercase();
-    if (l.starts_with("https://") || l.starts_with("http://")) && !iri.chars().any(char::is_control)
-    {
-        Ok(())
-    } else {
-        Err(Error::invalid("an image IRI must be http or https"))
-    }
-}
-
-/// An `order` key made by `order`, at most 1 KiB.
-pub fn order_key(k: &str) -> Result<()> {
-    if k.len() > MAX_ORDER_BYTES || !crate::order::is_valid(k) {
-        return Err(Error::invalid(
-            "not a valid order key (base 62, at most 1 KiB)",
-        ));
     }
     Ok(())
 }
@@ -159,10 +151,15 @@ fn anchor(a: &Anchor) -> Result<()> {
 /// Everything about an element that does not depend on the board: numbers (also what follows from
 /// them, the bounds after rotation), limits, text, colours.
 pub fn element(e: &Element) -> Result<()> {
-    rect(&e.frame)?;
+    // a group's frame is a union of members, so it may be twice as large
+    if matches!(e.kind, Kind::Group) {
+        rect_finite(&e.frame)?;
+    } else {
+        rect(&e.frame)?;
+    }
     finite("angle", e.angle)?;
     finite("angle in degrees", e.angle.to_degrees())?;
-    rect(&crate::geometry::bounds(&e.frame, e.angle))?;
+    rect_finite(&crate::geometry::bounds(&e.frame, e.angle))?;
     style(&e.style)?;
     text(&e.label)?;
     match &e.kind {

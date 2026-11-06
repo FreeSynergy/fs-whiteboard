@@ -49,6 +49,16 @@ impl BoardDoc {
                             .is_ok_and(|id| pages.contains_key(&id))
                 })
         });
+        let keys: Vec<String> = std::iter::once("name".to_string())
+            .chain(
+                self.pages
+                    .keys()
+                    .flat_map(|id| ["name", "order", "deleted"].map(|p| format!("{id}/{p}"))),
+            )
+            .collect();
+        for k in keys {
+            self.clocks.entry(k).or_default();
+        }
     }
 
     /// The highest counter seen on this object.

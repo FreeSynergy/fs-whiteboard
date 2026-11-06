@@ -39,6 +39,10 @@ impl ElementDoc {
     pub fn sanitize(&mut self) {
         let kind = &self.element.kind;
         self.clocks.retain(|u, _| u.applies_to(kind));
+        // a missing clock is the lowest one; written out, so equal documents are equal bytes
+        for u in Unit::ALL.into_iter().filter(|u| u.applies_to(kind)) {
+            self.clocks.entry(u).or_default();
+        }
     }
 
     /// The clock of a unit; `(0, "")` if it was never written.

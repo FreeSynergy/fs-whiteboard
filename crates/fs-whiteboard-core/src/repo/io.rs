@@ -70,10 +70,46 @@ impl WhiteboardRepo {
         Ok(())
     }
 
+    /// Remembers that an object could not be read: once per object, at most 100 objects.
     pub(super) fn report(&self, id: ObjectId, why: &str) {
         if let Ok(mut p) = self.problems.lock() {
+            if let Some(e) = p.iter_mut().find(|(i, _)| *i == id) {
+                e.1 = why.to_string();
+                return;
+            }
+            if p.len() >= 100 {
+                p.remove(0);
+            }
             p.push((id, why.to_string()));
         }
+    }
+
+    /// An object that reads again is no problem any more.
+    pub(super) fn clear_problem(&self, id: ObjectId) {
+        if let Ok(mut p) = self.problems.lock() {
+            p.retain(|(i, _)| *i != id);
+        }
+    }
+
+    /// Removes a board with every element of it, and leaves the marker. Caller holds the lock.
+    pub(super) async fn purge(
+        &self,
+        guard: &mut super::handle::Boards,
+        id: ObjectId,
+    ) -> Result<()> {
+        let q = Query::new()
+            .of_type(ELEMENT_TYPE)
+            .with_index("board", id.to_string());
+        for o in self.store.query(&q).await? {
+            self.store.delete(o.envelope.id, &self.actor).await?;
+        }
+        if self.store.get(id).await?.is_some_and(|o| !is_marker(&o)) {
+            self.store.delete(id, &self.actor).await?;
+        }
+        self.mark_deleted(id).await?;
+        guard.remove(&id);
+        self.clear_problem(id);
+        Ok(())
     }
 
     /// Objects that were skipped because they could not be read (id and reason), oldest first.

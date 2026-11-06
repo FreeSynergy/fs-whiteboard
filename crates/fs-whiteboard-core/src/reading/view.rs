@@ -121,10 +121,26 @@ fn group_frames(
     let mut acc: BTreeMap<ObjectId, Rect> = BTreeMap::new();
     for id in by_depth.iter().rev() {
         let e = &elements[id];
-        let own = if matches!(e.kind, Kind::Group) {
-            acc.get(id).copied()
-        } else {
-            Some(bounds(&e.frame, e.angle))
+        let own = match &e.kind {
+            Kind::Group => acc.get(id).copied(),
+            // a connector lies between its ends, not where its stored frame says
+            Kind::Connector(c) => {
+                let at = |a: &Anchor| match a.element.and_then(|x| elements.get(&x)) {
+                    Some(t) if matches!(t.kind, Kind::Group) => {
+                        acc.get(&t.id).map_or(a.point, Rect::center)
+                    }
+                    Some(t) => t.frame.center(),
+                    None => a.point,
+                };
+                let (p, q) = (at(&c.source), at(&c.target));
+                Some(Rect::new(
+                    p.x.min(q.x),
+                    p.y.min(q.y),
+                    (p.x - q.x).abs(),
+                    (p.y - q.y).abs(),
+                ))
+            }
+            _ => Some(bounds(&e.frame, e.angle)),
         };
         let parent = parents[id].filter(|p| matches!(elements[p].kind, Kind::Group));
         if let (Some(p), Some(r), false) = (parent, own, e.deleted) {

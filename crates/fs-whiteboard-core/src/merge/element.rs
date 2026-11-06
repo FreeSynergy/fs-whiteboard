@@ -49,5 +49,6 @@ pub fn merge_element(local: &ElementDoc, remote: &ElementDoc) -> Result<ElementD
             }
         }
     }
+    out.sanitize();
     Ok(out)
 }
