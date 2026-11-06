@@ -64,5 +64,10 @@ A stroke has at most 100 000 points; an import at most 32 MiB; a name or text at
 ### Feed
 `subscribe(board)` over the store's change feed, filtered by that board.
 
+### Open points
+* `reorder` behind a deleted anchor goes silently to the front.
+* A board's deletion marker has no clock and no authority, and can block an id nobody has used yet. It needs authority once sync exists.
+* A visible element holding a key of nearly 1 KiB blocks `add`, `copy`, `group` and reorder-to-front until it is moved.
+
 ### Not built
 `sync`, `board.sync`, `presence.*` (the shared Presence interface has no owner yet), `board.share`, `library.*`, `template.*`, `comment.add`, PNG and PDF export, foreign imports, stylus input beyond storing pressure, and CRDT text. Listed unsupported where a capability exists. Rendering and hit testing belong to the component. Presence can join later without touching the core: it is passing data on its own channel, and nothing here stores or expects it.
