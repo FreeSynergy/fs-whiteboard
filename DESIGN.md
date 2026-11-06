@@ -40,4 +40,4 @@ A stroke has at most 100 000 points; an import at most 32 MiB. Text at most 1 Mi
 `subscribe(board)` over the store's change feed, filtered by that board.
 
 ### Not built
-`sync`, `board.sync`, `presence.*` (the shared Presence interface has no owner yet), `board.share`, `library.*`, `template.*`, `comment.add`, PNG and PDF export, foreign imports, stylus input beyond storing pressure, and CRDT text. Listed unsupported where a capability exists. Rendering and hit testing belong to the component.
+`sync`, `board.sync`, `presence.*` (the shared Presence interface has no owner yet), `board.share`, `library.*`, `template.*`, `comment.add`, PNG and PDF export, foreign imports, stylus input beyond storing pressure, and CRDT text. Listed unsupported where a capability exists. Rendering and hit testing belong to the component. Presence can join later without touching the core: it is passing data on its own channel, and nothing here stores or expects it.
