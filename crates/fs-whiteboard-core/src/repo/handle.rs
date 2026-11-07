@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::sync::Arc;
 
-use fs_store::{ObjectId, Store};
+use fs_objects::{ObjectId, Store};
 use tokio::sync::{Mutex, MutexGuard};
 
 use super::state::BoardState;

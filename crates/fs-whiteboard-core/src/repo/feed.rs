@@ -4,7 +4,7 @@
 //! keeps only the activities of objects on that board.
 
 use async_trait::async_trait;
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 use super::handle::WhiteboardRepo;
 use crate::error::Result;

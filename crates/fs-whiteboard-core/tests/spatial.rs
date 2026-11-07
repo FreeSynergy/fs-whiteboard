@@ -3,7 +3,7 @@
 mod common;
 
 use common::{Fixture, Pair, all, fixture, pair, rect_element};
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use fs_whiteboard_core::geometry::{bounds, union_all};
 use fs_whiteboard_core::{BoardEditor, Rect};
 use proptest::prelude::*;

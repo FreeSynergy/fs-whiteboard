@@ -3,7 +3,7 @@
 //! Pattern: Composite (leaf and container share one type) — a typed value with a `Kind`. Every
 //! member except the kind is a merge unit (see `Unit`); the kind never changes after `add`.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use serde::{Deserialize, Serialize};
 
 use super::geom::Rect;

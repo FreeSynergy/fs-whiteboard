@@ -5,7 +5,7 @@ mod common;
 use std::time::Duration;
 
 use common::{add_rect, fixture};
-use fs_store::{ObjectId, Query};
+use fs_objects::{ObjectId, Query};
 use fs_whiteboard_core::{Boards, Change, Subscription, WhiteboardFeed};
 use tokio::time::timeout;
 

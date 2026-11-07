@@ -5,7 +5,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 pub(super) type Parents = BTreeMap<ObjectId, Option<ObjectId>>;
 

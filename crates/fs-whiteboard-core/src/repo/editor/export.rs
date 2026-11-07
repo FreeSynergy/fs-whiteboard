@@ -6,7 +6,7 @@
 use std::collections::BTreeSet;
 
 use fs_interfaces::Unsupported;
-use fs_store::{Blob, ObjectId};
+use fs_objects::{Blob, ObjectId};
 
 use super::handle::Editor;
 use super::selection::with_members;

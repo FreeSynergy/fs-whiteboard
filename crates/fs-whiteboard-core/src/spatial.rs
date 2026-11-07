@@ -6,7 +6,7 @@
 
 use std::collections::HashMap;
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use rstar::{AABB, RTree, RTreeObject};
 
 use crate::model::Rect;

@@ -5,7 +5,7 @@
 //! is read under the board lock. A deleted board leaves a marker, so a late remote cannot bring it
 //! back. `fs-hub-client::sync_once` overwrites objects, so it must not feed this store.
 
-use fs_store::StoredObject;
+use fs_objects::StoredObject;
 
 use super::handle::WhiteboardRepo;
 use super::io::is_marker;

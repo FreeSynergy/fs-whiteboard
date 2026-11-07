@@ -3,7 +3,7 @@
 //! Pattern: Factory — the id, the board, the order and `deleted` are decided here, whatever the
 //! caller put in; everything else is checked first, so nothing unusable reaches the store.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 use super::handle::Editor;
 use crate::error::{Error, Result};

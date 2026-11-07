@@ -5,7 +5,7 @@
 
 use async_trait::async_trait;
 use fs_interfaces::Capabilities;
-use fs_store::{ObjectId, Query};
+use fs_objects::{ObjectId, Query};
 
 use super::editor::Editor;
 use super::handle::WhiteboardRepo;

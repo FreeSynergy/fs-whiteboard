@@ -4,7 +4,7 @@
 //! with the index fields the queries use; the envelope is rebuilt from the document, never taken
 //! from a remote object, so no wall time can enter a merge.
 
-use fs_store::{Envelope, ObjectId, StoredObject};
+use fs_objects::{Envelope, ObjectId, StoredObject};
 
 use super::{BoardDoc, ElementDoc};
 use crate::consts::{BOARD_CONTENT, BOARD_CONTEXT, BOARD_TYPE, ELEMENT_CONTENT, ELEMENT_TYPE};

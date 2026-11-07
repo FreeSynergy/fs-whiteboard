@@ -6,7 +6,7 @@ mod common;
 use async_trait::async_trait;
 use common::setup;
 use fs_interfaces::Capabilities;
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use fs_whiteboard_core::{
     Board, BoardEditor, Boards, Cursor, Element, Error, Paged, Rect, Result, WhiteboardFeed,
 };

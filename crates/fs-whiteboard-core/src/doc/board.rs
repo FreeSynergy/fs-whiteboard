@@ -5,7 +5,7 @@
 
 use std::collections::BTreeMap;
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use serde::{Deserialize, Serialize};
 use serde_json::to_value;
 

@@ -6,7 +6,7 @@ use chrono::{TimeZone, Utc};
 use common::{add_rect, frame_of, pair, raw};
 use fs_whiteboard_core::{BoardEditor, Boards, StyleField};
 
-async fn fill_of(ed: &dyn BoardEditor, id: fs_store::ObjectId) -> String {
+async fn fill_of(ed: &dyn BoardEditor, id: fs_objects::ObjectId) -> String {
     ed.get_element(id).await.unwrap().unwrap().style.fill
 }
 

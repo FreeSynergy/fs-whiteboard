@@ -7,7 +7,7 @@ use std::str::FromStr;
 use std::time::Instant;
 
 use common::{all, fixture, pair, rect_element};
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use fs_whiteboard_core::order::{between, is_valid};
 use fs_whiteboard_core::reading::effective_parents;
 use fs_whiteboard_core::{Boards, Element, Error};

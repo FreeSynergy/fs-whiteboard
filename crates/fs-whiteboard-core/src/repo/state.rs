@@ -7,7 +7,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use serde_json::json;
 
 use crate::clock::Clock;

@@ -3,7 +3,7 @@
 //! Pattern: Command — each is a list of unit changes under one new clock per element, so it merges
 //! with other people's changes to other properties of the same element.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use serde_json::{Value, to_value};
 
 use super::handle::Editor;

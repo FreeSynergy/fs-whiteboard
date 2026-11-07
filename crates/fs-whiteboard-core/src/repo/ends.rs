@@ -3,7 +3,7 @@
 //! Pattern: Facade method — a reading rule made available beyond the contract (an inherent method,
 //! not on the trait): an end on a deleted element stays at that element's last frame.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 use super::handle::WhiteboardRepo;
 use crate::error::{Error, Result};

@@ -5,7 +5,7 @@ mod common;
 use std::collections::BTreeSet;
 
 use common::all;
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 #[tokio::test]
 async fn paging_is_stable_and_loses_or_repeats_nothing() {

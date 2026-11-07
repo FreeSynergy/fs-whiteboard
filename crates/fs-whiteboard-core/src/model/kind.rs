@@ -3,7 +3,7 @@
 //! Pattern: Composite (typed variants) — the kind is fixed when an element is added; so are a
 //! stroke's points, an image's IRI and a connector's arrow. Only text-like members change later.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use serde::{Deserialize, Serialize};
 
 use super::geom::{Point, StrokePoint};

@@ -6,7 +6,7 @@ mod common;
 use std::time::Duration;
 
 use common::{add_rect, all, element_object, fixture, pair, rect_element};
-use fs_store::{Envelope, Query, StoredObject};
+use fs_objects::{Envelope, Query, StoredObject};
 use fs_whiteboard_core::merge::merge_element;
 use fs_whiteboard_core::{
     Anchor, BOARD_CONTEXT, Boards, Change, Connector, ELEMENT_TYPE, Element, ElementDoc, Error,
@@ -67,7 +67,7 @@ async fn deleting_a_board_emits_deletes_only() {
 async fn add_next_to_a_key_at_the_limit_is_refused_before_writing() {
     let f = fixture().await;
     let mut file = common::exported(&f.ed.export(None, &[], OWN).await.unwrap().bytes);
-    let mut v = serde_json::to_value(rect_element(fs_store::ObjectId::new(), 0.0, 0.0)).unwrap();
+    let mut v = serde_json::to_value(rect_element(fs_objects::ObjectId::new(), 0.0, 0.0)).unwrap();
     v["order"] = json!("z".repeat(1024));
     v["page"] = file["pages"][0]["id"].clone();
     file["elements"] = json!([v]);

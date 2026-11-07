@@ -5,7 +5,7 @@
 
 use std::sync::Mutex;
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 use crate::repo::handle::WhiteboardRepo;
 use crate::repo::history::{Edit, History};

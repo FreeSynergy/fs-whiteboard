@@ -5,7 +5,7 @@
 //! overrides it. The Rust form of `BoardEditor` in `whiteboard.capnp`; all ids must be on this board.
 
 use async_trait::async_trait;
-use fs_store::{Blob, ObjectId};
+use fs_objects::{Blob, ObjectId};
 
 use crate::error::Result;
 use crate::model::{Align, Board, ConnectorEnd, Cursor, Element, Paged, Point, Rect, StyleField};

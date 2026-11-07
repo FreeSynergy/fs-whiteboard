@@ -4,7 +4,7 @@
 //! nothing else is renumbered. Equal neighbour keys (two concurrent adds) cannot be split by a key;
 //! then the element to go behind gets a new key after the moved ones, and that is recorded too.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use serde_json::to_value;
 
 use super::handle::Editor;

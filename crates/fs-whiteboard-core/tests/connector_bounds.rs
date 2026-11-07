@@ -3,7 +3,7 @@
 mod common;
 
 use common::{all, fixture, rect_element};
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use fs_whiteboard_core::{Anchor, Boards, Connector, Element, Kind, Point, Rect, Unit};
 
 async fn linked(f: &common::Fixture) -> (ObjectId, ObjectId, ObjectId) {

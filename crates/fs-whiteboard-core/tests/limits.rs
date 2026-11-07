@@ -6,7 +6,7 @@ mod common;
 use std::sync::Arc;
 
 use common::{fixture, rect_element};
-use fs_store::{Envelope, Store, StoredObject, TursoStore};
+use fs_objects::{Envelope, Store, StoredObject, TursoStore};
 use fs_whiteboard_core::{
     BOARD_CONTEXT, Boards, ELEMENT_TYPE, Element, Error, Kind, Rect, StyleField, WhiteboardRepo,
 };
@@ -35,7 +35,7 @@ async fn arithmetic_that_leaves_float64_is_refused_not_stored() {
     // nothing odd reached the store: every object parses and has finite numbers
     let all = f
         .store
-        .query(&fs_store::Query::new().of_type(ELEMENT_TYPE))
+        .query(&fs_objects::Query::new().of_type(ELEMENT_TYPE))
         .await
         .unwrap();
     assert_eq!(all.len(), 3, "no copy, group or rotation was stored");

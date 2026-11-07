@@ -3,7 +3,7 @@
 //! Pattern: Strategy (alignment rule chosen by [`Align`]) — functions over plain values, so the
 //! same rules serve the spatial index, `bounds`, and the component that draws.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 use crate::model::{Align, Rect};
 

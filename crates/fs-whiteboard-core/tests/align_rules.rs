@@ -2,7 +2,7 @@
 
 use std::str::FromStr;
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use fs_whiteboard_core::geometry::align;
 use fs_whiteboard_core::{Align, Rect};
 

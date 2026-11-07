@@ -6,7 +6,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 use super::connector::End;
 use super::pages::effective_pages;

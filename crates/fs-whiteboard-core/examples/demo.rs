@@ -4,7 +4,7 @@
 
 use std::sync::Arc;
 
-use fs_store::{Query, Store, TursoStore};
+use fs_objects::{Query, Store, TursoStore};
 use fs_whiteboard_core::{
     Anchor, Boards, Connector, Element, Error, Kind, Rect, ShapeKind, StyleField, WhiteboardRepo,
 };

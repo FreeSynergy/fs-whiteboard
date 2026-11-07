@@ -3,7 +3,7 @@
 mod common;
 
 use common::{busy, exported, fixture};
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use fs_whiteboard_core::{Boards, Error};
 use serde_json::{Value, json};
 const OWN: &str = "application/vnd.freesynergy.whiteboard+json";

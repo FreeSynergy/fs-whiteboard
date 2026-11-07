@@ -1,6 +1,6 @@
 //! Sample boards for the format tests.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use fs_whiteboard_core::{
     Anchor, Connector, Element, Kind, Point, Rect, ShapeKind, StrokePoint, StyleField,
 };

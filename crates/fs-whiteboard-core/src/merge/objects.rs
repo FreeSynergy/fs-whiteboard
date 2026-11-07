@@ -3,7 +3,7 @@
 //! Pattern: Adapter — reads both contents as documents, merges them, and builds the stored form
 //! again. Envelope times play no part; the envelope is rebuilt from the merged document.
 
-use fs_store::StoredObject;
+use fs_objects::StoredObject;
 
 use super::{merge_board, merge_element};
 use crate::consts::{BOARD_TYPE, ELEMENT_TYPE};

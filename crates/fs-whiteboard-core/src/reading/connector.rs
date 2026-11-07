@@ -3,7 +3,7 @@
 //! Pattern: Null Object (for a missing element) — an end on a deleted element stays at that element's
 //! last frame, which a deleted element keeps; an end on nothing is free.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 use crate::model::{Point, Rect};
 

@@ -3,7 +3,7 @@
 mod common;
 
 use common::{add_rect, element_object, pair, raw, replicate};
-use fs_store::{ObjectId, StoredObject};
+use fs_objects::{ObjectId, StoredObject};
 use fs_whiteboard_core::merge::merge_element;
 use fs_whiteboard_core::{Boards, ElementDoc, Error, StyleField};
 use serde_json::{Value, json};
@@ -127,6 +127,6 @@ async fn a_late_remote_cannot_bring_a_deleted_board_back() {
     replicate(&p.a.store, &p.b.repo, p.a.board).await;
     assert!(p.b.repo.open(p.b.board).await.unwrap().is_none());
     assert!(p.b.repo.list(None).await.unwrap().items.is_empty());
-    let left = p.b.store.query(&fs_store::Query::new()).await.unwrap();
+    let left = p.b.store.query(&fs_objects::Query::new()).await.unwrap();
     assert_eq!(left.len(), 1, "only the marker");
 }

@@ -4,7 +4,7 @@
 //! in the file of its feature.
 
 use async_trait::async_trait;
-use fs_store::{Blob, ObjectId};
+use fs_objects::{Blob, ObjectId};
 
 use super::handle::Editor;
 use crate::error::Result;

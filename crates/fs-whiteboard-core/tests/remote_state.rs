@@ -3,7 +3,7 @@
 mod common;
 
 use common::{element_object, fixture};
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use fs_whiteboard_core::merge::{merge_board, merge_element};
 use fs_whiteboard_core::{BoardDoc, ElementDoc, Unit};
 use serde_json::json;

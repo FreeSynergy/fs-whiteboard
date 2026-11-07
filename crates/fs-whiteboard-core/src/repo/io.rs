@@ -3,7 +3,7 @@
 //! Pattern: Repository — the only place that talks to the store about this program's objects.
 //! Elements are written with the logged `put`, so the activity log has every change.
 
-use fs_store::{Envelope, ObjectId, Query, StoredObject};
+use fs_objects::{Envelope, ObjectId, Query, StoredObject};
 
 use super::handle::WhiteboardRepo;
 use super::state::BoardState;

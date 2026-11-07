@@ -4,7 +4,7 @@
 //! each once, however many times it or they are named. A locked element anywhere in that set
 //! refuses the whole edit.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use serde_json::{Value, to_value};
 
 use super::handle::Editor;

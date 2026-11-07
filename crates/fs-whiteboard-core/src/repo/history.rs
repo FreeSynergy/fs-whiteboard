@@ -4,7 +4,7 @@
 //! Undo writes the old value as a new change with a new clock, unless the unit's clock is no longer
 //! the one this edit wrote: someone else changed it since, and their work stays.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use serde_json::Value;
 
 use crate::clock::Clock;

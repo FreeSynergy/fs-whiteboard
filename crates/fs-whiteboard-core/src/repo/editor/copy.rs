@@ -5,7 +5,7 @@
 
 use std::collections::BTreeMap;
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 use super::handle::Editor;
 use super::selection::{unique, with_members};

@@ -3,7 +3,7 @@
 mod common;
 
 use common::{add_rect, all, fixture, pair, replicate, setup};
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use fs_whiteboard_core::{BoardEditor, Boards};
 
 async fn ids(ed: &dyn BoardEditor, page: ObjectId) -> Vec<ObjectId> {

@@ -7,7 +7,7 @@
 use std::collections::BTreeMap;
 use std::collections::btree_map::Entry;
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use serde_json::Value;
 
 use super::handle::WhiteboardRepo;

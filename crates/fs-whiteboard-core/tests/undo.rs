@@ -5,7 +5,7 @@ mod common;
 use common::{all, fixture, frame_of};
 use fs_whiteboard_core::{Align, BoardEditor, StyleField};
 
-async fn fill(ed: &dyn BoardEditor, id: fs_store::ObjectId) -> String {
+async fn fill(ed: &dyn BoardEditor, id: fs_objects::ObjectId) -> String {
     ed.get_element(id).await.unwrap().unwrap().style.fill
 }
 

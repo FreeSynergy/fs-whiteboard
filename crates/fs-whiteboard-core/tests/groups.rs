@@ -6,9 +6,9 @@ use common::{all, fixture, frame_of};
 use fs_whiteboard_core::{Anchor, Connector, Element, Kind, Point, Rect};
 
 fn connector(
-    page: fs_store::ObjectId,
-    from: fs_store::ObjectId,
-    to: fs_store::ObjectId,
+    page: fs_objects::ObjectId,
+    from: fs_objects::ObjectId,
+    to: fs_objects::ObjectId,
 ) -> Element {
     let k = Connector {
         source: Anchor {

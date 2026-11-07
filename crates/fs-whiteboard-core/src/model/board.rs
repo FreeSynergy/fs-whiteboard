@@ -2,7 +2,7 @@
 //!
 //! Pattern: Composite (read model) — a board is a name and an ordered list of pages.
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use serde::{Deserialize, Serialize};
 
 /// A page of a board. `deleted` pages stay as markers, so a removal merges.

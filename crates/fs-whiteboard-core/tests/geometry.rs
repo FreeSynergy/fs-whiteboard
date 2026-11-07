@@ -3,7 +3,7 @@
 mod common;
 
 use common::rect_element;
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use fs_whiteboard_core::geometry::bounds;
 use fs_whiteboard_core::reading::{View, depths, effective_pages, effective_parents};
 use fs_whiteboard_core::{Element, Kind, Page, Rect};

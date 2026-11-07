@@ -3,7 +3,7 @@
 mod common;
 
 use common::{fixture, frame_of, rect_element};
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 use fs_whiteboard_core::{
     Align, Boards, ConnectorEnd, Element, Error, Kind, Point, Rect, StrokePoint, StyleField,
 };

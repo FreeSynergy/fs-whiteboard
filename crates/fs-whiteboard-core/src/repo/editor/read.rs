@@ -6,7 +6,7 @@
 
 use std::collections::BTreeSet;
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 use super::handle::Editor;
 use crate::error::{Error, Result};

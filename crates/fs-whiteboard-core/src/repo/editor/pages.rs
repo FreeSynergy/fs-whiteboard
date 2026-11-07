@@ -3,7 +3,7 @@
 //! Pattern: Command on the board document — a page is never dropped; removing sets `deleted`, which
 //! merges. Page changes are not part of undo (the contract lists undo for elements).
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 use super::handle::Editor;
 use crate::error::{Error, Result};

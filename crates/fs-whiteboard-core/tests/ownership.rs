@@ -4,7 +4,7 @@
 mod common;
 
 use common::{all, element_object, fixture, rect_element};
-use fs_store::{Envelope, ObjectId, StoredObject};
+use fs_objects::{Envelope, ObjectId, StoredObject};
 use fs_whiteboard_core::{BOARD_CONTEXT, Boards, ELEMENT_TYPE, Error};
 use serde_json::json;
 

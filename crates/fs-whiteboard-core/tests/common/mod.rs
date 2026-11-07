@@ -10,7 +10,7 @@ pub use sample::{busy, el, exported};
 
 use std::sync::Arc;
 
-use fs_store::{ObjectId, Store, TursoStore};
+use fs_objects::{ObjectId, Store, TursoStore};
 use fs_whiteboard_core::{BoardEditor, Boards, Element, Kind, Rect, ShapeKind, WhiteboardRepo};
 
 /// Proptest settings: modest case counts, no failure files in the source tree.
@@ -101,7 +101,7 @@ pub async fn replicate(from: &Arc<dyn Store>, to: &WhiteboardRepo, board: Object
     to.apply_remote(from.get(board).await.unwrap().unwrap())
         .await
         .unwrap();
-    let q = fs_store::Query::new()
+    let q = fs_objects::Query::new()
         .of_type(fs_whiteboard_core::ELEMENT_TYPE)
         .with_index("board", board.to_string());
     for o in from.query(&q).await.unwrap() {
@@ -161,6 +161,6 @@ pub async fn ids_in(ed: &dyn BoardEditor, page: ObjectId, area: Rect) -> Vec<Obj
 }
 
 /// The stored object of an element.
-pub async fn element_object(f: &Fixture, id: ObjectId) -> fs_store::StoredObject {
+pub async fn element_object(f: &Fixture, id: ObjectId) -> fs_objects::StoredObject {
     f.store.get(id).await.unwrap().unwrap()
 }

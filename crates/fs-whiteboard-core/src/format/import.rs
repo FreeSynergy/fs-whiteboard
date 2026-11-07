@@ -6,7 +6,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use fs_store::ObjectId;
+use fs_objects::ObjectId;
 
 use super::Imported;
 use super::json::{Document, JSON_MEDIA_TYPE, VERSION};

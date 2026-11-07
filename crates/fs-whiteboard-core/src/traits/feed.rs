@@ -4,7 +4,7 @@
 //! it ends the subscription.
 
 use async_trait::async_trait;
-use fs_store::{Activity, ActivityKind, Envelope, ObjectId, StoredObject};
+use fs_objects::{Activity, ActivityKind, Envelope, ObjectId, StoredObject};
 use tokio::sync::broadcast::{Receiver, error::RecvError};
 
 use crate::error::Result;
