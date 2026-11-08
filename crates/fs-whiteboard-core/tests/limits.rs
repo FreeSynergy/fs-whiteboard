@@ -13,27 +13,31 @@ use fs_whiteboard_core::{
 use serde_json::json;
 
 fn refused<T: std::fmt::Debug>(r: Result<T, Error>) {
-    assert!(matches!(r, Err(Error::Invalid(_))), "{r:?}");
+    match r {
+        Err(Error::Invalid(_)) => {}
+        other => panic!("{other:?}"),
+    }
 }
 
 #[tokio::test]
 async fn arithmetic_that_leaves_float64_is_refused_not_stored() {
-    let f = fixture().await;
-    let a = f.rect(0.0, 0.0).await;
-    let (b, c) = (f.rect(-1e15, 0.0).await, f.rect(1e15, 0.0).await);
-    refused(f.ed.copy(&[c], 1e15, 0.0).await);
+    let fx = fixture().await;
+    let a = fx.rect(0.0, 0.0).await;
+    let (b, c) = (fx.rect(-1e15, 0.0).await, fx.rect(1e15, 0.0).await);
+    refused(fx.ed.copy(&[c], 1e15, 0.0).await);
     let _ = b;
-    refused(f.ed.move_by(&[c], 1.7e308, 0.0).await);
-    refused(f.ed.rotate(a, 1e308).await);
+    refused(fx.ed.move_by(&[c], 1.7e308, 0.0).await);
+    refused(fx.ed.rotate(a, 1e308).await);
     refused(
-        f.ed.set_frame(a, Rect::new(1.7e308, 0.0, 1.7e308, 1.0))
+        fx.ed
+            .set_frame(a, Rect::new(1.7e308, 0.0, 1.7e308, 1.0))
             .await,
     );
-    let mut e = rect_element(f.page, 1.7e308, 0.0);
+    let mut e = rect_element(fx.page, 1.7e308, 0.0);
     e.frame.width = 1.7e308;
-    refused(f.ed.add(e).await);
+    refused(fx.ed.add(e).await);
     // nothing odd reached the store: every object parses and has finite numbers
-    let all = f
+    let all = fx
         .store
         .query(&fs_objects::Query::new().of_type(ELEMENT_TYPE))
         .await
@@ -43,7 +47,10 @@ async fn arithmetic_that_leaves_float64_is_refused_not_stored() {
         !all.iter()
             .any(|o| o.content.to_string().contains("null,") && o.content["frame"].is_null())
     );
-    assert!(f.repo.problems().is_empty());
+    assert_eq!(
+        fx.repo.problems(),
+        [] as [(fs_objects::ObjectId, std::string::String); 0]
+    );
 }
 
 #[tokio::test]

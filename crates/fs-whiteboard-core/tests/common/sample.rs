@@ -13,11 +13,11 @@ pub fn el(f: &Fixture, kind: Kind, x: f64) -> Element {
 
 /// A board with every kind, a group, a second page and a deleted element.
 /// A board with every kind, a group, a second page and a deleted element.
-pub async fn busy(f: &Fixture) -> Vec<ObjectId> {
-    let ed = &*f.ed;
-    let a = ed
+pub async fn busy(fx: &Fixture) -> Vec<ObjectId> {
+    let ed = &*fx.ed;
+    let diamond = ed
         .add(el(
-            f,
+            fx,
             Kind::Shape {
                 shape: ShapeKind::Diamond,
             },
@@ -26,9 +26,9 @@ pub async fn busy(f: &Fixture) -> Vec<ObjectId> {
         .await
         .unwrap()
         .id;
-    let b = ed
+    let note = ed
         .add(el(
-            f,
+            fx,
             Kind::Note {
                 text: "note\nline two".into(),
             },
@@ -49,27 +49,27 @@ pub async fn busy(f: &Fixture) -> Vec<ObjectId> {
             pressure: None,
         },
     ];
-    let s = ed
-        .add(el(f, Kind::Stroke { points: pts }, 100.0))
+    let stroke = ed
+        .add(el(fx, Kind::Stroke { points: pts }, 100.0))
         .await
         .unwrap()
         .id;
     let link = Connector {
         source: Anchor {
-            element: Some(a),
+            element: Some(diamond),
             point: Point::default(),
         },
         target: Anchor {
-            element: Some(b),
+            element: Some(note),
             point: Point::default(),
         },
         label: "uses".into(),
         arrow_end: true,
     };
-    let c = ed.add(el(f, Kind::Connector(link), 0.0)).await.unwrap().id;
-    let t = ed
+    let link_el = ed.add(el(fx, Kind::Connector(link), 0.0)).await.unwrap().id;
+    let text = ed
         .add(el(
-            f,
+            fx,
             Kind::Text {
                 text: "hello".into(),
             },
@@ -79,7 +79,7 @@ pub async fn busy(f: &Fixture) -> Vec<ObjectId> {
         .unwrap()
         .id;
     ed.add(el(
-        f,
+        fx,
         Kind::Image {
             iri: "https://example.org/files/9".into(),
         },
@@ -88,7 +88,7 @@ pub async fn busy(f: &Fixture) -> Vec<ObjectId> {
     .await
     .unwrap();
     ed.add(el(
-        f,
+        fx,
         Kind::Area {
             text: "Frame".into(),
         },
@@ -96,9 +96,9 @@ pub async fn busy(f: &Fixture) -> Vec<ObjectId> {
     ))
     .await
     .unwrap();
-    let g = ed.group(&[s, t]).await.unwrap();
+    let grp = ed.group(&[stroke, text]).await.unwrap();
     ed.set_style(
-        &[a],
+        &[diamond],
         &[
             StyleField::Fill("#ff0000".into()),
             StyleField::Dashed(true),
@@ -107,7 +107,14 @@ pub async fn busy(f: &Fixture) -> Vec<ObjectId> {
     )
     .await
     .unwrap();
-    ed.rotate(a, 0.5).await.unwrap();
+    ed.rotate(diamond, 0.5).await.unwrap();
+    extras(fx).await;
+    vec![diamond, note, stroke, link_el, text, grp]
+}
+
+/// A second page and a deleted element, so the formats see both.
+async fn extras(fx: &Fixture) {
+    let ed = &*fx.ed;
     let (_, second) = ed.add_page("Second").await.unwrap();
     ed.add(Element::new(
         second,
@@ -118,7 +125,7 @@ pub async fn busy(f: &Fixture) -> Vec<ObjectId> {
     .unwrap();
     let gone = ed
         .add(el(
-            f,
+            fx,
             Kind::Text {
                 text: "deleted".into(),
             },
@@ -128,7 +135,6 @@ pub async fn busy(f: &Fixture) -> Vec<ObjectId> {
         .unwrap()
         .id;
     ed.delete(&[gone]).await.unwrap();
-    vec![a, b, s, c, t, g]
 }
 
 /// An export read back as JSON.

@@ -39,5 +39,8 @@ fn align_rules() {
         align(&items[..2], Align::DistributeX).is_empty(),
         "two cannot be spread"
     );
-    assert!(align(&[], Align::Left).is_empty());
+    assert_eq!(
+        align(&[], Align::Left),
+        [] as [(fs_objects::ObjectId, f64, f64); 0]
+    );
 }

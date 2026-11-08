@@ -1,4 +1,4 @@
-//! Regression: stray clocks, and apply_remote next to local edits.
+//! Regression: stray clocks, and `apply_remote` next to local edits.
 
 mod common;
 

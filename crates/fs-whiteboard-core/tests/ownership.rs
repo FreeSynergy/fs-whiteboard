@@ -15,7 +15,10 @@ fn foreign(object_type: &str, context: Option<&str>) -> StoredObject {
 }
 
 fn refused(r: Result<(), Error>) {
-    assert!(matches!(r, Err(Error::Invalid(_))), "{r:?}");
+    match r {
+        Err(Error::Invalid(_)) => {}
+        other => panic!("{other:?}"),
+    }
 }
 
 #[tokio::test]
@@ -41,7 +44,10 @@ async fn a_forged_marker_deletes_only_a_board_of_this_program() {
     let mut marker = foreign("WhiteboardTombstone", Some("whiteboard-tombstone"));
     marker.envelope.id = e;
     refused(f.repo.apply_remote(marker).await);
-    assert!(f.store.get(e).await.unwrap().unwrap().envelope.object_type == ELEMENT_TYPE);
+    assert_eq!(
+        f.store.get(e).await.unwrap().unwrap().envelope.object_type,
+        ELEMENT_TYPE
+    );
     assert!(f.repo.open(f.board).await.unwrap().is_some());
 }
 
@@ -109,7 +115,10 @@ async fn a_hidden_holder_of_a_long_key_does_not_block_add() {
         .unwrap();
     let ed = f.repo.open(b.id).await.unwrap().unwrap();
     let page = b.pages[0].id;
-    assert!(all(&*ed, page).await.is_empty());
+    assert_eq!(
+        all(&*ed, page).await,
+        [] as [fs_whiteboard_core::Element; 0]
+    );
     for i in 0..3 {
         ed.add(rect_element(page, f64::from(i), 0.0)).await.unwrap();
     }

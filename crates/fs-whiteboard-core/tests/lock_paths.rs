@@ -7,29 +7,32 @@ use fs_whiteboard_core::Error;
 
 #[tokio::test]
 async fn a_locked_member_blocks_the_whole_edit_through_its_group() {
-    let f = fixture().await;
-    let (a, b) = (f.rect(0.0, 0.0).await, f.rect(20.0, 0.0).await);
-    let g = f.ed.group(&[a, b]).await.unwrap();
-    f.ed.set_locked(&[b], true).await.unwrap();
-    let (_, second) = f.ed.add_page("Second").await.unwrap();
+    let fx = fixture().await;
+    let (a, b) = (fx.rect(0.0, 0.0).await, fx.rect(20.0, 0.0).await);
+    let g = fx.ed.group(&[a, b]).await.unwrap();
+    fx.ed.set_locked(&[b], true).await.unwrap();
+    let (_, second) = fx.ed.add_page("Second").await.unwrap();
 
-    let r = f.ed.set_parent(&[g], Some(second), None).await;
-    assert!(matches!(r, Err(Error::Locked(id)) if id == b), "{r:?}");
-    assert_eq!(f.ed.get_element(b).await.unwrap().unwrap().page, f.page);
-    assert_eq!(f.ed.get_element(a).await.unwrap().unwrap().page, f.page);
+    let res = fx.ed.set_parent(&[g], Some(second), None).await;
+    assert!(matches!(res, Err(Error::Locked(id)) if id == b), "{res:?}");
+    assert_eq!(fx.ed.get_element(b).await.unwrap().unwrap().page, fx.page);
+    assert_eq!(fx.ed.get_element(a).await.unwrap().unwrap().page, fx.page);
 
-    let r = f.ed.delete(&[g]).await;
-    assert!(matches!(r, Err(Error::Locked(id)) if id == b), "{r:?}");
-    assert_eq!(all(&*f.ed, f.page).await.len(), 3, "nothing was hidden");
-    assert!(!f.ed.get_element(g).await.unwrap().unwrap().deleted);
+    let res = fx.ed.delete(&[g]).await;
+    assert!(matches!(res, Err(Error::Locked(id)) if id == b), "{res:?}");
+    assert_eq!(all(&*fx.ed, fx.page).await.len(), 3, "nothing was hidden");
+    assert!(!fx.ed.get_element(g).await.unwrap().unwrap().deleted);
 
-    let r = f.ed.move_by(&[g], 5.0, 0.0).await;
-    assert!(matches!(r, Err(Error::Locked(_))));
-    assert_eq!(frame_of(&*f.ed, a).await.x, 0.0);
+    let res = fx.ed.move_by(&[g], 5.0, 0.0).await;
+    assert!(matches!(res, Err(Error::Locked(_))));
+    assert_eq!(frame_of(&*fx.ed, a).await.x, 0.0);
 
-    f.ed.set_locked(&[b], false).await.unwrap();
-    f.ed.delete(&[g]).await.unwrap();
-    assert!(all(&*f.ed, f.page).await.is_empty());
+    fx.ed.set_locked(&[b], false).await.unwrap();
+    fx.ed.delete(&[g]).await.unwrap();
+    assert_eq!(
+        all(&*fx.ed, fx.page).await,
+        [] as [fs_whiteboard_core::Element; 0]
+    );
 }
 
 #[tokio::test]

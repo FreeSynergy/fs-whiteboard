@@ -9,7 +9,10 @@ use fs_whiteboard_core::{
 };
 
 fn invalid<T: std::fmt::Debug>(r: Result<T, Error>) {
-    assert!(matches!(r, Err(Error::Invalid(_))), "{r:?}");
+    match r {
+        Err(Error::Invalid(_)) => {}
+        other => panic!("{other:?}"),
+    }
 }
 
 fn stroke(n: usize) -> Kind {

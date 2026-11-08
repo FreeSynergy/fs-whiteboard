@@ -41,7 +41,7 @@ proptest! {
     fn broken_cycles_end_and_keep_the_lowest_id_free(parents in prop::collection::vec(prop::option::of(0u8..8), 8)) {
         let els: BTreeMap<ObjectId, Element> = parents.iter().enumerate().map(|(i, p)| {
             let mut e = rect_element(id(100), 0.0, 0.0);
-            e.id = id(i as u8);
+            e.id = id(u8::try_from(i).unwrap());
             e.parent = p.map(id);
             (e.id, e)
         }).collect();

@@ -27,30 +27,31 @@ fn connector(
 
 #[tokio::test]
 async fn moving_a_group_moves_each_member_once() {
-    let f = fixture().await;
+    let fx = fixture().await;
     let (a, b, c) = (
-        f.rect(0.0, 0.0).await,
-        f.rect(20.0, 0.0).await,
-        f.rect(40.0, 0.0).await,
+        fx.rect(0.0, 0.0).await,
+        fx.rect(20.0, 0.0).await,
+        fx.rect(40.0, 0.0).await,
     );
-    let inner = f.ed.group(&[a, b]).await.unwrap();
-    let outer = f.ed.group(&[inner, c]).await.unwrap();
+    let inner = fx.ed.group(&[a, b]).await.unwrap();
+    let outer = fx.ed.group(&[inner, c]).await.unwrap();
     // the group, its group inside, and members of both are all named, some twice
-    f.ed.move_by(&[outer, a, inner, c, a], 10.0, 5.0)
+    fx.ed
+        .move_by(&[outer, a, inner, c, a], 10.0, 5.0)
         .await
         .unwrap();
     for (id, x) in [(a, 10.0), (b, 30.0), (c, 50.0)] {
-        let r = frame_of(&*f.ed, id).await;
-        assert_eq!((r.x, r.y), (x, 5.0), "{id} moved exactly once");
+        let rc = frame_of(&*fx.ed, id).await;
+        assert_eq!((rc.x, rc.y), (x, 5.0), "{id} moved exactly once");
     }
-    let g = f.ed.get_element(outer).await.unwrap().unwrap();
+    let g = fx.ed.get_element(outer).await.unwrap().unwrap();
     assert_eq!(
         (g.frame.x, g.frame.right()),
         (10.0, 60.0),
         "the group's frame is the union of its members"
     );
     assert!(
-        f.ed.set_frame(outer, Rect::default()).await.is_err(),
+        fx.ed.set_frame(outer, Rect::default()).await.is_err(),
         "a group has no frame of its own"
     );
 }

@@ -26,7 +26,7 @@ async fn a_deleted_group_hides_its_members_nested_ones_too() {
         "three rectangles and two groups"
     );
     f.ed.delete(&[outer]).await.unwrap();
-    assert!(ids(&*f.ed, f.page).await.is_empty());
+    assert_eq!(ids(&*f.ed, f.page).await, [] as [fs_objects::ObjectId; 0]);
     assert!(
         f.ed.get_element(a).await.unwrap().is_some(),
         "still there as a marker"
@@ -70,7 +70,7 @@ async fn a_removed_page_hides_its_elements() {
             .id;
     f.rect(0.0, 0.0).await;
     f.ed.remove_page(second).await.unwrap();
-    assert!(ids(&*f.ed, second).await.is_empty());
+    assert_eq!(ids(&*f.ed, second).await, [] as [fs_objects::ObjectId; 0]);
     assert_eq!(ids(&*f.ed, f.page).await.len(), 1);
     assert!(f.ed.get_element(on_second).await.unwrap().is_some());
     assert!(f.ed.bounds(second).await.unwrap().is_none());
@@ -109,7 +109,7 @@ async fn concurrent_removal_of_the_last_pages_keeps_the_highest_id() {
             .collect();
         assert_eq!(live, vec![keep]);
         assert_eq!(ids(&*f.ed, keep).await, vec![kept_el]);
-        assert!(ids(&*f.ed, gone).await.is_empty());
+        assert_eq!(ids(&*f.ed, gone).await, [] as [fs_objects::ObjectId; 0]);
     }
     assert!(
         p.a.ed.remove_page(keep).await.is_err(),

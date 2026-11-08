@@ -105,12 +105,18 @@ async fn add_delete_align_reorder_group_and_copy_are_undoable_and_redoable() {
     let ed = &*f.ed;
     let a = f.rect(0.0, 0.0).await;
     assert!(ed.undo().await.unwrap(), "undo of add");
-    assert!(all(ed, f.page).await.is_empty());
+    assert_eq!(
+        all(ed, f.page).await,
+        [] as [fs_whiteboard_core::Element; 0]
+    );
     assert!(ed.redo().await.unwrap());
     assert_eq!(all(ed, f.page).await.len(), 1);
 
     ed.delete(&[a]).await.unwrap();
-    assert!(all(ed, f.page).await.is_empty());
+    assert_eq!(
+        all(ed, f.page).await,
+        [] as [fs_whiteboard_core::Element; 0]
+    );
     assert!(ed.undo().await.unwrap() && ed.redo().await.unwrap() && ed.undo().await.unwrap());
     assert_eq!(all(ed, f.page).await.len(), 1);
 

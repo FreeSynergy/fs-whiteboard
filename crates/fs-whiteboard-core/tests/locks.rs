@@ -22,7 +22,10 @@ fn stroke(n: usize) -> Kind {
 }
 
 fn invalid<T: std::fmt::Debug>(r: Result<T, Error>) {
-    assert!(matches!(r, Err(Error::Invalid(_))), "{r:?}");
+    match r {
+        Err(Error::Invalid(_)) => {}
+        other => panic!("{other:?}"),
+    }
 }
 
 #[tokio::test]

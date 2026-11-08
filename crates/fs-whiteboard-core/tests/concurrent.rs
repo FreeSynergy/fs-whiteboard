@@ -44,7 +44,10 @@ async fn concurrent_delete_and_move_keep_the_move_for_undo() {
         let e = f.ed.get_element(id).await.unwrap().unwrap();
         assert!(e.deleted, "deleted wins");
         assert_eq!(e.frame.x, 20.0, "the move is kept");
-        assert!(common::all(&*f.ed, f.page).await.is_empty());
+        assert_eq!(
+            common::all(&*f.ed, f.page).await,
+            [] as [fs_whiteboard_core::Element; 0]
+        );
     }
     assert_eq!(raw(&p.a.store, id).await, raw(&p.b.store, id).await);
     // the person who deleted takes it back: the element is there, where the other put it

@@ -18,9 +18,9 @@ const OWN: &str = "application/vnd.freesynergy.whiteboard+json";
 
 #[tokio::test]
 async fn a_connector_in_a_group_counts_with_its_ends_not_its_stored_frame() {
-    let f = fixture().await;
-    let (a, b) = (f.rect(1000.0, 0.0).await, f.rect(1100.0, 0.0).await);
-    let k = Connector {
+    let fx = fixture().await;
+    let (a, b) = (fx.rect(1000.0, 0.0).await, fx.rect(1100.0, 0.0).await);
+    let conn = Connector {
         source: Anchor {
             element: Some(a),
             point: Point::default(),
@@ -31,17 +31,18 @@ async fn a_connector_in_a_group_counts_with_its_ends_not_its_stored_frame() {
         },
         ..Connector::default()
     };
-    let c =
-        f.ed.add(Element::new(
-            f.page,
-            Kind::Connector(k),
+    let c = fx
+        .ed
+        .add(Element::new(
+            fx.page,
+            Kind::Connector(conn),
             Rect::new(0.0, 0.0, 1.0, 1.0),
         ))
         .await
         .unwrap()
         .id;
-    let g = f.ed.group(&[a, b, c]).await.unwrap();
-    let frame = f.ed.get_element(g).await.unwrap().unwrap().frame;
+    let g = fx.ed.group(&[a, b, c]).await.unwrap();
+    let frame = fx.ed.get_element(g).await.unwrap().unwrap().frame;
     assert_eq!((frame.x, frame.right()), (1000.0, 1110.0), "{frame:?}");
 }
 
@@ -95,7 +96,10 @@ async fn a_remote_marker_deletes_the_board_here_too() {
     let marker = p.b.store.get(p.b.board).await.unwrap().unwrap();
     p.a.repo.apply_remote(marker).await.unwrap();
     assert!(p.a.repo.open(p.a.board).await.unwrap().is_none());
-    assert!(p.a.repo.list(None).await.unwrap().items.is_empty());
+    assert_eq!(
+        p.a.repo.list(None).await.unwrap().items,
+        [] as [fs_whiteboard_core::Board; 0]
+    );
     p.a.repo.apply_remote(old).await.unwrap(); // a late remote is dropped on purpose
     assert_eq!(
         p.a.store.query(&Query::new()).await.unwrap().len(),
@@ -144,11 +148,17 @@ async fn a_valid_remote_object_replaces_a_broken_local_one() {
     f.store.put(bad, "x").await.unwrap();
     let repo = WhiteboardRepo::new(f.store.clone(), "me");
     let ed = repo.open(f.board).await.unwrap().unwrap();
-    assert!(all(&*ed, f.page).await.is_empty());
+    assert_eq!(
+        all(&*ed, f.page).await,
+        [] as [fs_whiteboard_core::Element; 0]
+    );
     assert_eq!(repo.problems().len(), 1);
     repo.apply_remote(good).await.unwrap();
     assert_eq!(all(&*ed, f.page).await.len(), 1);
-    assert!(repo.problems().is_empty());
+    assert_eq!(
+        repo.problems(),
+        [] as [(fs_objects::ObjectId, std::string::String); 0]
+    );
     let _ = ELEMENT_TYPE;
 }
 

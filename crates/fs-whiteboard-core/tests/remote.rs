@@ -9,10 +9,10 @@ use fs_whiteboard_core::{Boards, ElementDoc, Error, StyleField};
 use serde_json::{Value, json};
 
 fn refused(r: Result<(), Error>) {
-    assert!(
-        matches!(r, Err(Error::Invalid(_) | Error::TooLarge(_))),
-        "{r:?}"
-    );
+    match r {
+        Err(Error::Invalid(_) | Error::TooLarge(_)) => {}
+        other => panic!("{other:?}"),
+    }
 }
 
 #[tokio::test]
@@ -126,7 +126,10 @@ async fn a_late_remote_cannot_bring_a_deleted_board_back() {
     p.b.repo.apply_remote(old_element).await.unwrap();
     replicate(&p.a.store, &p.b.repo, p.a.board).await;
     assert!(p.b.repo.open(p.b.board).await.unwrap().is_none());
-    assert!(p.b.repo.list(None).await.unwrap().items.is_empty());
+    assert_eq!(
+        p.b.repo.list(None).await.unwrap().items,
+        [] as [fs_whiteboard_core::Board; 0]
+    );
     let left = p.b.store.query(&fs_objects::Query::new()).await.unwrap();
     assert_eq!(left.len(), 1, "only the marker");
 }

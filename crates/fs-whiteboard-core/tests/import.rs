@@ -10,14 +10,14 @@ const OWN: &str = "application/vnd.freesynergy.whiteboard+json";
 
 #[tokio::test]
 async fn imports_that_point_at_nothing_or_loop_or_break_numbers_are_refused() {
-    let f = fixture().await;
-    busy(&f).await;
-    let good = exported(&f.ed.export(None, &[], OWN).await.unwrap().bytes);
+    let fx = fixture().await;
+    busy(&fx).await;
+    let good = exported(&fx.ed.export(None, &[], OWN).await.unwrap().bytes);
     let ghost = json!(ObjectId::new());
-    let refuse = |label: &'static str, v: Value| {
-        let repo = f.repo.clone();
+    let refuse = |label: &'static str, val: Value| {
+        let repo = fx.repo.clone();
         async move {
-            let r = repo.import(OWN, v.to_string().as_bytes()).await;
+            let r = repo.import(OWN, val.to_string().as_bytes()).await;
             assert!(
                 matches!(
                     r,
@@ -27,60 +27,60 @@ async fn imports_that_point_at_nothing_or_loop_or_break_numbers_are_refused() {
             );
         }
     };
-    let mut v = good.clone();
-    v["elements"][0]["parent"] = ghost.clone();
-    refuse("dangling parent", v).await;
-    let mut v = good.clone();
-    v["elements"][0]["page"] = ghost.clone();
-    refuse("dangling page", v).await;
-    let mut v = good.clone();
-    let i = v["elements"]
+    let mut val = good.clone();
+    val["elements"][0]["parent"] = ghost.clone();
+    refuse("dangling parent", val).await;
+    let mut val = good.clone();
+    val["elements"][0]["page"] = ghost.clone();
+    refuse("dangling page", val).await;
+    let mut val = good.clone();
+    let pos = val["elements"]
         .as_array()
         .unwrap()
         .iter()
         .position(|e| e["kind"]["type"] == "connector")
         .unwrap();
-    v["elements"][i]["kind"]["source"]["element"] = ghost;
-    refuse("dangling connector end", v).await;
-    let mut v = good.clone();
-    let groups: Vec<usize> = (0..v["elements"].as_array().unwrap().len())
-        .filter(|i| v["elements"][*i]["kind"]["type"] == "group")
+    val["elements"][pos]["kind"]["source"]["element"] = ghost;
+    refuse("dangling connector end", val).await;
+    let mut val = good.clone();
+    let groups: Vec<usize> = (0..val["elements"].as_array().unwrap().len())
+        .filter(|pos| val["elements"][*pos]["kind"]["type"] == "group")
         .collect();
-    let (g, other) = (groups[0], 0);
+    let (grp, other) = (groups[0], 0);
     let (gid, oid) = (
-        v["elements"][g]["id"].clone(),
-        v["elements"][other]["id"].clone(),
+        val["elements"][grp]["id"].clone(),
+        val["elements"][other]["id"].clone(),
     );
-    v["elements"][g]["parent"] = oid;
-    v["elements"][other]["parent"] = gid;
-    refuse("cycle", v).await;
-    let mut v = good.clone();
-    v["elements"][0]["frame"]["width"] = json!(-3.0);
-    refuse("negative size", v).await;
-    let mut v = good.clone();
-    v["version"] = json!(2);
-    refuse("version", v).await;
-    let mut v = good.clone();
-    v["elements"][1]["id"] = v["elements"][0]["id"].clone();
-    refuse("duplicate id", v).await;
-    let mut v = good.clone();
-    v["elements"][0]["order"] = json!("a0");
-    refuse("bad order key", v).await;
+    val["elements"][grp]["parent"] = oid;
+    val["elements"][other]["parent"] = gid;
+    refuse("cycle", val).await;
+    let mut val = good.clone();
+    val["elements"][0]["frame"]["width"] = json!(-3.0);
+    refuse("negative size", val).await;
+    let mut val = good.clone();
+    val["version"] = json!(2);
+    refuse("version", val).await;
+    let mut val = good.clone();
+    val["elements"][1]["id"] = val["elements"][0]["id"].clone();
+    refuse("duplicate id", val).await;
+    let mut val = good.clone();
+    val["elements"][0]["order"] = json!("a0");
+    refuse("bad order key", val).await;
 
     // NaN and infinity cannot even be written in JSON; the usual spellings are refused as well
     let text = good.to_string();
     for bad in ["NaN", "Infinity", "-Infinity", "1e999"] {
         let broken = text.replacen("\"angle\":0.0", &format!("\"angle\":{bad}"), 1);
         assert_ne!(broken, text);
-        let r = f.repo.import(OWN, broken.as_bytes()).await;
+        let r = fx.repo.import(OWN, broken.as_bytes()).await;
         assert!(
             matches!(r, Err(Error::Json(_) | Error::Invalid(_))),
             "{bad}: {r:?}"
         );
     }
-    assert!(f.repo.import(OWN, b"not json").await.is_err());
+    assert!(fx.repo.import(OWN, b"not json").await.is_err());
     assert_eq!(
-        f.repo.list(None).await.unwrap().items.len(),
+        fx.repo.list(None).await.unwrap().items.len(),
         1,
         "nothing was imported"
     );
