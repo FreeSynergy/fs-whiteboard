@@ -8,7 +8,7 @@ What is different here: two people changing the same board are merged property b
 
 ## What it can do today
 
-Latest tag: `v0.2.0` (stage 1 of the design).
+Latest tag: `v0.0.1` (stage 1 of the design).
 
 - Boards, pages and every kind of element in the contract.
 - Merging of changes from two sides, commutative and repeatable; concurrent delete and move are covered.
