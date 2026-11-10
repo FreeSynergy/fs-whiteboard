@@ -40,8 +40,8 @@ pub fn app_command(argv: &[String]) -> i32 {
     }
 }
 
-/// Where the boards are kept: `--store`, else the data folder (`$XDG_DATA_HOME/freesynergy/whiteboard/app.db`), so a
-/// program started from the store never loses data by default.
+/// Where the boards are kept: `--store`, else the data folder (`$XDG_DATA_HOME`, on Windows `%LOCALAPPDATA%`, else
+/// `~/.local/share`, then `freesynergy/whiteboard/app.db`), so a program started from the store never loses data by default.
 fn store_file(store: Option<std::path::PathBuf>) -> Result<std::path::PathBuf, String> {
     if let Some(file) = store {
         return Ok(file);
@@ -51,7 +51,7 @@ fn store_file(store: Option<std::path::PathBuf>) -> Result<std::path::PathBuf, S
         .or_else(|| {
             std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join(".local/share"))
         })
-        .ok_or("cannot find a data folder (HOME is not set); give --store <file>")?;
+        .ok_or("cannot find a data folder (neither XDG_DATA_HOME, LOCALAPPDATA nor HOME is set); give --store <file>")?;
     let dir = base.join("freesynergy").join("whiteboard");
     std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     Ok(dir.join("app.db"))
