@@ -22,6 +22,7 @@
 
 mod clock;
 mod consts;
+pub mod describe;
 mod doc;
 mod error;
 pub mod format;
