@@ -176,12 +176,11 @@ fn record_commands_refer_to_the_own_type() {
                 );
             }
         }
+        // a `change` takes an `Edit` and nothing else (rule of types.capnp)
         for c in d.commands.iter().filter(|c| c.kind == CommandKind::Change) {
             assert!(
-                c.input
-                    .iter()
-                    .any(|f| f.basic == BasicType::Reference && f.target == ty.name),
-                "{}.{} changes a record without naming it",
+                c.input.is_empty(),
+                "{}.{} must have no input list",
                 ty.name,
                 c.name
             );
@@ -198,21 +197,7 @@ fn the_core_methods_are_all_described() {
         .map(|c| c.name)
         .collect();
     for m in [
-        "add",
-        "move",
-        "setFrame",
-        "rotate",
-        "setStyle",
-        "setText",
-        "setEnd",
-        "setLocked",
-        "delete",
-        "copy",
-        "group",
-        "ungroup",
-        "reorder",
-        "align",
-        "setParent",
+        "add", "change", "move", "delete", "copy", "group", "ungroup", "reorder", "align",
     ] {
         assert!(element.contains(m), "Element.{m}");
     }
@@ -230,8 +215,37 @@ fn the_core_methods_are_all_described() {
         .map(|c| c.name)
         .collect();
     for m in [
-        "create", "rename", "delete", "import", "export", "undo", "redo", "find",
+        "create", "change", "delete", "import", "export", "undo", "redo", "find",
     ] {
         assert!(board.contains(m), "Board.{m}");
+    }
+}
+
+#[test]
+fn the_flag_is_in_the_description_and_equals_the_table() {
+    for (ty, d) in [
+        (BOARD, Board::describe()),
+        (PAGE, Page::describe()),
+        (ELEMENT, Element::describe()),
+    ] {
+        for row in table().iter().filter(|r| r.ty == ty) {
+            let c = d.find_command(row.name).expect("described");
+            assert_eq!(c.supported, row.supported, "{}.{}", ty.name, row.name);
+        }
+    }
+    assert!(
+        !Board::describe().find_command("share").unwrap().supported,
+        "coming"
+    );
+    assert!(Board::describe().find_command("create").unwrap().supported);
+}
+
+#[test]
+fn find_is_the_standard_one_with_an_empty_term_listing_everything() {
+    for d in [Board::describe(), Page::describe(), Element::describe()] {
+        let find = d.find_command("find").unwrap();
+        assert_eq!(find.input[0].name, "term");
+        assert!(!find.input[0].required);
+        assert_eq!(find.result[0].target, d.name);
     }
 }

@@ -5,7 +5,7 @@
 //! the core's own `NOT_BUILT` list (`repo/support.rs`) where it has one.
 
 use fs_types::BasicType::{Choice, Link, MultilineText, Reference, Text};
-use fs_types::CommandKind::{Check, Create, Find, Other};
+use fs_types::CommandKind::{Change, Check, Create, Find, Other};
 
 use super::scope::{BOARD, Cmd, ELEMENT, PAGE};
 use super::table::Row;
@@ -213,11 +213,11 @@ fn page() -> Vec<Row> {
     vec![
         Row::no(
             PAGE,
-            "rename",
-            Other,
+            "change",
+            Change,
             &[],
             "the core has no page rename (page `name` is a merge unit but no editor method sets it)",
-            |c: &Cmd| (vec![c.id(), c.f("name", Text).required()], vec![]),
+            |_: &Cmd| (vec![], vec![]),
         ),
         Row::no(
             PAGE,

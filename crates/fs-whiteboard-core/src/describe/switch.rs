@@ -1,22 +1,32 @@
-//! The one switch between "the description carries everything" and "the description says what is supported".
+//! The one place that turns a table [`Row`] into a `CommandDescription`.
 //!
-//! Pattern: Adapter — `emit` is the only place that turns a table [`Row`] into a `CommandDescription`.
-//! TRANSITION: `types.capnp` has no field `supported` yet (Thread T adds it), and `fs-types` has none on
-//! `CommandDescription`. Until then every row is emitted, supported or not, so a frontend can show the control
-//! ("coming"); the flag lives in the table only. When `CommandDescription` has the field, set it HERE from
-//! `row.supported` (and the reason, if the field takes one) — no other file changes, and the frontend does not change.
+//! Pattern: Adapter — `emit` is the only such function. Every row is emitted, supported or not (the rule of
+//! `types.capnp`, fs-interfaces v0.0.11): `supported` comes from the row, so a frontend shows the control locked
+//! ("coming") and frees it when the core reports it. `find` is the standard one (`standard_find`: input `term`, empty =
+//! the list) plus the filters of the row; `change` has no input list (its input is an `Edit`).
+//! SWITCH (done): before v0.0.11 the flag lived in the table only; now `emit` sets it from `row.supported`.
 
-use fs_types::CommandDescription;
+use fs_types::{CommandDescription, CommandKind};
 
-use super::scope::Ty;
+use super::scope::{Ty, kebab};
 use super::table::{Row, table};
 
-/// The command description of a row (all rows are emitted, see the module head).
+/// The command description of a row.
 pub fn emit(row: &Row) -> CommandDescription {
-    let label = format!("{}.{}", row.ty.label, super::scope::kebab(row.name));
-    let mut c = CommandDescription::new(row.name, row.kind, &label);
-    c.input.clone_from(&row.input);
-    c.result.clone_from(&row.result);
+    let label = format!("{}.{}", row.ty.label, kebab(row.name));
+    let standard = row.kind == CommandKind::Find && row.name == "find";
+    let mut c = if standard {
+        CommandDescription::standard_find(&label, row.ty.name)
+    } else {
+        CommandDescription::new(row.name, row.kind, &label)
+    };
+    c.input.extend(row.input.iter().cloned());
+    if !standard {
+        c.result.extend(row.result.iter().cloned());
+    }
+    if !row.supported {
+        c = c.unsupported();
+    }
     c
 }
 
