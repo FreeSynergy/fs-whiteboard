@@ -1,0 +1,21 @@
+[package]
+name = "fs-whiteboard"
+description = "FreeSynergy.Whiteboard: one program, one command (ADR 0063): the window"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "fs-whiteboard"
+path = "src/main.rs"
+
+[features]
+default = ["gui"]
+# The window. Servers and machines without a screen build with --no-default-features.
+gui = ["dep:fs-whiteboard-app"]
+
+[dependencies]
+fs-whiteboard-app = { path = "../fs-whiteboard-app", optional = true }

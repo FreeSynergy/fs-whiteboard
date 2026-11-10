@@ -53,10 +53,10 @@ impl SpatialIndex {
 
     /// Takes an element out.
     pub fn remove(&mut self, id: ObjectId) {
-        if let Some(old) = self.entries.remove(&id) {
-            if let Some(tree) = self.trees.get_mut(&old.page) {
-                tree.remove(&old);
-            }
+        if let Some(old) = self.entries.remove(&id)
+            && let Some(tree) = self.trees.get_mut(&old.page)
+        {
+            tree.remove(&old);
         }
     }
 

@@ -10,10 +10,10 @@ use crate::model::Page;
 pub fn effective_pages(pages: &[Page]) -> Vec<Page> {
     let mut out = pages.to_vec();
     out.sort_by(|a, b| (a.order.as_bytes(), a.id).cmp(&(b.order.as_bytes(), b.id)));
-    if out.iter().all(|p| p.deleted) {
-        if let Some(keep) = out.iter_mut().max_by_key(|p| p.id) {
-            keep.deleted = false;
-        }
+    if out.iter().all(|p| p.deleted)
+        && let Some(keep) = out.iter_mut().max_by_key(|p| p.id)
+    {
+        keep.deleted = false;
     }
     out
 }

@@ -20,7 +20,7 @@ fn value(unit: Unit, v: u8) -> Value {
     let n = f64::from(v);
     match unit {
         Unit::Page => json!(pool(v)),
-        Unit::Parent => json!((v % 2 == 0).then(|| pool(v))),
+        Unit::Parent => json!(v.is_multiple_of(2).then(|| pool(v))),
         Unit::Order
         | Unit::Text
         | Unit::Label
@@ -29,9 +29,9 @@ fn value(unit: Unit, v: u8) -> Value {
         | Unit::StyleFontFamily => json!(format!("v{}", v % 5)),
         Unit::Frame => json!({"x": n, "y": n / 2.0, "width": n, "height": 1.0}),
         Unit::Angle | Unit::StyleLineWidth => json!(n / 4.0),
-        Unit::Locked | Unit::Deleted | Unit::StyleDashed => json!(v % 2 == 0),
+        Unit::Locked | Unit::Deleted | Unit::StyleDashed => json!(v.is_multiple_of(2)),
         Unit::Source | Unit::Target => json!(Anchor {
-            element: (v % 2 == 0).then(|| pool(v)),
+            element: v.is_multiple_of(2).then(|| pool(v)),
             point: fs_whiteboard_core::Point { x: n, y: 0.0 }
         }),
         Unit::StyleOpacity | Unit::StyleFontSize => json!(n / 255.0),
